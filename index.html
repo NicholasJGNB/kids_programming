@@ -244,6 +244,37 @@
   @keyframes pop { from { scale: .4; } to { scale: 1; } }
   .chip.cmd-up, .chip.cmd-down, .chip.cmd-left, .chip.cmd-right { background: var(--green); }
   .chip.running { outline: 4px solid #ffd86b; }
+  /* 循环块：紫色，带 −次数+ 调节 */
+  .loop-chip {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 42px;
+    padding: 0 6px;
+    border-radius: 12px;
+    background: #b98bff;
+    color: #fff;
+    box-shadow: 0 3px 0 rgba(0,0,0,.12);
+    animation: pop .2s;
+  }
+  .loop-chip.running { outline: 4px solid #ffd86b; }
+  .loop-chip .loop-ico { font-size: 18px; }
+  .loop-chip .loop-count { font-size: 18px; font-weight: bold; min-width: 16px; text-align: center; }
+  .loop-chip .loop-x { font-size: 14px; opacity: .85; }
+  .loop-chip .loop-btn {
+    width: 22px; height: 22px;
+    border: none;
+    border-radius: 7px;
+    background: rgba(255,255,255,.25);
+    color: #fff;
+    font-size: 17px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+  .loop-chip .loop-btn:active { background: rgba(255,255,255,.45); }
 
   /* 按钮区 */
   .controls {
@@ -273,8 +304,8 @@
 
   .actions {
     display: grid;
-    grid-template-columns: 1fr 1fr 1.4fr;
-    gap: 10px;
+    grid-template-columns: 1fr 1fr 1fr 1.3fr;
+    gap: 8px;
   }
   button.act {
     border: none;
@@ -288,9 +319,11 @@
     color: #fff;
   }
   button.act:active { translate: 0 4px; box-shadow: 0 1px 0 rgba(0,0,0,.15); }
+  .btn-loop { background: #b98bff; }
   .btn-undo { background: #9aa6c4; }
   .btn-clear { background: var(--pink); }
   .btn-run { background: var(--primary); }
+  button.act { font-size: 15px; padding: 14px 0; }
   button:disabled { opacity: .5; cursor: default; }
 
   /* 庆祝弹窗 */
@@ -380,6 +413,7 @@
     </div>
 
     <div class="actions">
+      <button class="act btn-loop"  id="btnLoop">🔁 重复</button>
       <button class="act btn-undo"  id="btnUndo">↩ 撤回</button>
       <button class="act btn-clear" id="btnClear">🗑 清空</button>
       <button class="act btn-run"   id="btnRun">▶ 出发！</button>
@@ -558,7 +592,9 @@ const MOVE_DELTA = {
 const ARROW = { up: '⬆', down: '⬇', left: '⬅', right: '➡' };
 
 let levelIndex = 0;
-let program = [];        // 当前命令序列，例如 ['right','up',...]
+// 命令序列。每一项是方向 'up'/'down'/'left'/'right'，
+// 或一个循环标记 { loop: N } —— 表示"它后面的动作重复 N 次"
+let program = [];
 let robot = null;        // {x, y, dir}
 let isRunning = false;
 let cleared = new Set(); // 已通关的关卡序号（用来显示 ⭐）
@@ -702,19 +738,52 @@ function placeRobot(animate) {
   }
 }
 
-/* 渲染程序条 */
+/* 渲染程序条。方向命令是绿色箭头方块，循环是紫色的 🔁−N+ 块 */
 function renderProgram() {
   programEl.innerHTML = '';
   if (program.length === 0) return;
   program.forEach((cmd, i) => {
-    const chip = document.createElement('div');
-    chip.className = 'chip cmd-' + cmd;
-    chip.dataset.index = i;
-    chip.textContent = ARROW[cmd];
-    programEl.appendChild(chip);
+    if (typeof cmd === 'object' && cmd.loop !== undefined) {
+      // 循环块
+      const box = document.createElement('div');
+      box.className = 'loop-chip';
+      box.dataset.index = i;
+      box.innerHTML =
+        `<button class="loop-btn" data-act="dec" data-i="${i}">−</button>` +
+        `<span class="loop-ico">🔁</span>` +
+        `<span class="loop-x">×</span>` +
+        `<span class="loop-count">${cmd.loop}</span>` +
+        `<button class="loop-btn" data-act="inc" data-i="${i}">＋</button>`;
+      programEl.appendChild(box);
+    } else {
+      const chip = document.createElement('div');
+      chip.className = 'chip cmd-' + cmd;
+      chip.dataset.index = i;
+      chip.textContent = ARROW[cmd];
+      programEl.appendChild(chip);
+    }
   });
   // 命令多时自动滑到最右，露出刚加的命令
   programEl.scrollLeft = programEl.scrollWidth;
+}
+
+/* 加一个循环块（默认重复2次） */
+function addLoop() {
+  if (isRunning) return;
+  if (program.length >= 60) { toast('命令有点太多啦～'); return; }
+  program.push({ loop: 2 });
+  renderProgram();
+  tone(740, 0.07, 0, 'square', 0.12);
+}
+
+/* 调整某个循环块的次数（2~9） */
+function changeLoop(i, delta) {
+  if (isRunning) return;
+  const item = program[i];
+  if (!item || item.loop === undefined) return;
+  item.loop = Math.max(2, Math.min(9, item.loop + delta));
+  renderProgram();
+  tone(880, 0.05, 0, 'square', 0.1);
 }
 
 function addCommand(cmd) {
@@ -743,10 +812,43 @@ function setButtonsDisabled(disabled) {
   });
 }
 
+/* 把带循环的命令展开成一串实际要走的步骤。
+   每个循环块 {loop:N} 会把它后面紧跟的那串方向命令重复 N 次。
+   返回数组，每项 { dir, idx }，idx 指向要高亮的命令块。 */
+function flattenProgram() {
+  const steps = [];
+  let i = 0;
+  while (i < program.length) {
+    const item = program[i];
+    if (typeof item === 'object' && item.loop !== undefined) {
+      // 收集这个循环后面紧跟的方向命令（直到下一个循环或结尾）
+      const group = [];
+      let j = i + 1;
+      while (j < program.length && typeof program[j] === 'string') {
+        group.push({ dir: program[j], idx: j });
+        j++;
+      }
+      for (let r = 0; r < item.loop; r++) {
+        for (const g of group) steps.push(g);
+      }
+      i = j;
+    } else {
+      steps.push({ dir: item, idx: i });
+      i++;
+    }
+  }
+  return steps;
+}
+
+function clearRunHighlight() {
+  programEl.querySelectorAll('.running').forEach(c => c.classList.remove('running'));
+}
+
 /* 运行程序：一步步执行 */
 async function run() {
-  if (isRunning || program.length === 0) {
-    if (program.length === 0) toast('先给机器人下几个命令吧～');
+  const steps = flattenProgram();
+  if (isRunning || steps.length === 0) {
+    if (steps.length === 0) toast('先给机器人下几个走路命令吧～');
     return;
   }
   isRunning = true;
@@ -756,16 +858,15 @@ async function run() {
   const lv = level();
   await sleep(300);
 
-  const chips = programEl.querySelectorAll('.chip');
-
-  for (let i = 0; i < program.length; i++) {
-    chips.forEach(c => c.classList.remove('running'));
-    if (chips[i]) {
-      chips[i].classList.add('running');
+  for (let s = 0; s < steps.length; s++) {
+    clearRunHighlight();
+    const active = programEl.querySelector(`[data-index="${steps[s].idx}"]`);
+    if (active) {
+      active.classList.add('running');
       // 只在命令条内部横向滚动，让当前命令居中可见（不动整个页面）
-      programEl.scrollLeft = chips[i].offsetLeft - programEl.clientWidth / 2 + chips[i].offsetWidth / 2;
+      programEl.scrollLeft = active.offsetLeft - programEl.clientWidth / 2 + active.offsetWidth / 2;
     }
-    const cmd = program[i];
+    const cmd = steps[s].dir;
 
     const d = MOVE_DELTA[cmd];
     const nx = robot.x + d.x;
@@ -793,14 +894,14 @@ async function run() {
     // 到达终点：必须把星星都捡完才算过关
     if (robot.x === lv.goal.x && robot.y === lv.goal.y) {
       if (starsLeft.size > 0) {
-        chips.forEach(c => c.classList.remove('running'));
+        clearRunHighlight();
         await sleep(200);
         finishRun(false, '还差星星！',
           `还有 ${starsLeft.size} 颗⭐没捡到呢，先把⭐都收集齐再来充电～`,
           '🤔', '再试一次');
         return;
       }
-      chips.forEach(c => c.classList.remove('running'));
+      clearRunHighlight();
       cleared.add(levelIndex);  // 记下这一关已通关，显示 ⭐
       cheer();
       const isLast = levelIndex === LEVELS.length - 1;
@@ -817,7 +918,7 @@ async function run() {
   }
 
   // 程序走完但没到终点
-  chips.forEach(c => c.classList.remove('running'));
+  clearRunHighlight();
   await sleep(200);
   finishRun(false, '差一点点！', '机器人还没走到电池那里，再加几个命令试试～', '🤔', '再试一次');
 }
@@ -987,9 +1088,18 @@ document.getElementById('btnUp').onclick    = () => addCommandWithSound('up');
 document.getElementById('btnDown').onclick  = () => addCommandWithSound('down');
 document.getElementById('btnLeft').onclick  = () => addCommandWithSound('left');
 document.getElementById('btnRight').onclick = () => addCommandWithSound('right');
+document.getElementById('btnLoop').onclick    = addLoop;
 document.getElementById('btnUndo').onclick    = undo;
 document.getElementById('btnClear').onclick   = clearProgram;
 document.getElementById('btnRun').onclick     = run;
+
+// 循环块上的 − / ＋ 调次数（事件委托）
+programEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.loop-btn');
+  if (!btn) return;
+  const i = parseInt(btn.dataset.i, 10);
+  changeLoop(i, btn.dataset.act === 'inc' ? 1 : -1);
+});
 document.getElementById('levelToggle').onclick = openLevelPicker;
 document.getElementById('levelClose').onclick  = closeLevelPicker;
 // 点浮层空白处也能关闭
