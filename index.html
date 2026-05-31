@@ -75,6 +75,7 @@
     gap: 4px;
     aspect-ratio: 1 / 1;
     width: 100%;
+    position: relative; /* 机器人以地图为定位参照 */
   }
   .cell {
     background: var(--cell);
@@ -390,19 +391,17 @@ function buildBoard() {
   document.getElementById('goalHint').textContent = lv.hint;
 }
 
-/* 把机器人div放到格子上 */
+/* 把机器人div对齐到目标格子的真实位置（自动算准间距和留白） */
 function placeRobot(animate) {
-  const lv = level();
   const r = document.getElementById('robot');
+  const cell = boardEl.querySelector(`.cell[data-x="${robot.x}"][data-y="${robot.y}"]`);
+  if (!cell) return;
   if (!animate) r.style.transition = 'none';
-  // 用百分比定位：每格宽度 = 100/cols %
-  const cellW = 100 / lv.cols;
-  const cellH = 100 / lv.rows;
-  // board 有 12px padding，用 calc 让机器人对齐格子区域
-  r.style.left = `calc(12px + (100% - 24px) * ${robot.x / lv.cols})`;
-  r.style.top  = `calc(12px + (100% - 24px) * ${robot.y / lv.rows})`;
-  r.style.width  = `calc((100% - 24px) / ${lv.cols})`;
-  r.style.height = `calc((100% - 24px) / ${lv.rows})`;
+  // offsetLeft/Top 是相对于 #board（已设为 position:relative）的精确像素位置
+  r.style.left   = cell.offsetLeft + 'px';
+  r.style.top    = cell.offsetTop + 'px';
+  r.style.width  = cell.offsetWidth + 'px';
+  r.style.height = cell.offsetHeight + 'px';
   r.style.transform = `rotate(${DIR_ROTATE[robot.dir]}deg)`;
   if (!animate) {
     // 强制重绘后恢复动画
