@@ -150,12 +150,9 @@
   /* 按钮区 */
   .controls {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     width: 100%;
-    max-width: 280px;
-    margin: 0 auto;
   }
   button.cmd {
     border: none;
@@ -175,11 +172,6 @@
   }
   button.cmd:active { translate: 0 4px; box-shadow: 0 1px 0 rgba(0,0,0,.15); }
   button.cmd .ico { font-size: 28px; }
-  /* 十字方向键布局：上 / 左 右 / 下 */
-  .btn-up    { grid-area: 1 / 2 / 2 / 3; }
-  .btn-left  { grid-area: 2 / 1 / 3 / 2; }
-  .btn-right { grid-area: 2 / 3 / 3 / 4; }
-  .btn-down  { grid-area: 3 / 2 / 4 / 3; }
 
   .actions {
     display: grid;
@@ -238,6 +230,19 @@
     box-shadow: 0 5px 0 var(--primary-dark);
   }
   .card button:active { translate: 0 4px; box-shadow: 0 1px 0 var(--primary-dark); }
+  /* 过关撒花 */
+  .confetti-piece {
+    position: fixed;
+    top: -24px;
+    z-index: 60;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(900deg); opacity: 1; }
+  }
   .toast {
     position: fixed;
     bottom: 24px; left: 50%;
@@ -273,9 +278,9 @@
 
     <div class="controls">
       <button class="cmd btn-up"    id="btnUp"><span class="ico">⬆</span>上</button>
+      <button class="cmd btn-down"  id="btnDown"><span class="ico">⬇</span>下</button>
       <button class="cmd btn-left"  id="btnLeft"><span class="ico">⬅</span>左</button>
       <button class="cmd btn-right" id="btnRight"><span class="ico">➡</span>右</button>
-      <button class="cmd btn-down"  id="btnDown"><span class="ico">⬇</span>下</button>
     </div>
 
     <div class="actions">
@@ -532,6 +537,7 @@ function canMoveTo(x, y) {
 function finishRun(success, title, text, emoji, btnLabel, isFinalWin) {
   isRunning = false;
   setButtonsDisabled(false);
+  if (success) confetti(isFinalWin ? 160 : 90); // 过关撒花，通关撒更多
   document.getElementById('cardEmoji').textContent = emoji;
   document.getElementById('cardTitle').textContent = title;
   document.getElementById('cardText').textContent = text;
@@ -558,6 +564,24 @@ function bump() {
   const r = document.getElementById('robot');
   r.classList.add('bump');
   setTimeout(() => r.classList.remove('bump'), 400);
+}
+
+/* 撒花特效：从屏幕顶部落下一堆彩色碎纸 */
+function confetti(count) {
+  const colors = ['#ff6b9d','#ffd86b','#5b8def','#4cc38a','#ff9f43','#b98bff','#ff5e5e'];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    const size = 8 + Math.random() * 8;
+    p.style.left = (Math.random() * 100) + 'vw';
+    p.style.width = size + 'px';
+    p.style.height = (size * 0.6) + 'px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDelay = (Math.random() * 0.4) + 's';
+    p.style.animationDuration = (1.8 + Math.random() * 1.4) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 3600);
+  }
 }
 function cheer() {
   const r = document.getElementById('robot');
