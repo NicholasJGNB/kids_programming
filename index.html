@@ -65,6 +65,39 @@
   .status-bar .level-name { color: var(--primary); }
   .status-bar .hint { font-weight: normal; font-size: 14px; color: #7a89ad; }
 
+  /* 选关按钮 */
+  .level-select {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .level-btn {
+    width: 44px; height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--primary);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #d3def5;
+    transition: translate .08s;
+  }
+  .level-btn:active { translate: 0 3px; box-shadow: 0 0 0 #d3def5; }
+  .level-btn.current {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 3px 0 var(--primary-dark);
+  }
+  .level-btn.done::after {
+    content: "⭐";
+    font-size: 11px;
+    position: absolute;
+    margin: -8px 0 0 2px;
+  }
+  .level-btn { position: relative; }
+
   /* 地图 */
   #board {
     background: var(--panel);
@@ -292,6 +325,8 @@
       <span class="hint" id="goalHint">帮机器人找到电池！</span>
     </div>
 
+    <div class="level-select" id="levelSelect"></div>
+
     <div id="board"></div>
 
     <div class="program" id="program">
@@ -385,6 +420,7 @@ let levelIndex = 0;
 let program = [];        // 当前命令序列，例如 ['right','up',...]
 let robot = null;        // {x, y, dir}
 let isRunning = false;
+let cleared = new Set(); // 已通关的关卡序号（用来显示 ⭐）
 
 const boardEl   = document.getElementById('board');
 const programEl = document.getElementById('program');
@@ -429,6 +465,32 @@ function buildBoard() {
 
   document.getElementById('levelNum').textContent = levelIndex + 1;
   document.getElementById('goalHint').textContent = lv.hint;
+  renderLevelSelect();
+}
+
+/* 选关：一排可点的关卡按钮，全部可选，当前关高亮，通关的带 ⭐ */
+function renderLevelSelect() {
+  const box = document.getElementById('levelSelect');
+  box.innerHTML = '';
+  for (let i = 0; i < LEVELS.length; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'level-btn';
+    if (i === levelIndex) btn.classList.add('current');
+    if (cleared.has(i)) btn.classList.add('done');
+    btn.textContent = (i + 1);
+    btn.onclick = () => goToLevel(i);
+    box.appendChild(btn);
+  }
+}
+
+/* 跳到指定关卡 */
+function goToLevel(i) {
+  if (isRunning) return;          // 运行中不许切关
+  if (i === levelIndex) return;   // 已经在这关
+  levelIndex = i;
+  program = [];
+  renderProgram();
+  buildBoard();
 }
 
 /* 把机器人div对齐到目标格子的真实位置（自动算准间距和留白） */
@@ -535,6 +597,7 @@ async function run() {
     // 到达终点
     if (robot.x === lv.goal.x && robot.y === lv.goal.y) {
       chips.forEach(c => c.classList.remove('running'));
+      cleared.add(levelIndex);  // 记下这一关已通关，显示 ⭐
       cheer();
       const isLast = levelIndex === LEVELS.length - 1;
       if (isLast) soundCheer(); else soundWin();
