@@ -45,6 +45,8 @@
     flex-direction: column;
     gap: 12px;
   }
+  /* 竖屏：.main 和 .panel 不产生盒子，子元素照常单列排列（和原来一样） */
+  .main, .panel { display: contents; }
   .status-bar {
     display: flex;
     justify-content: space-between;
@@ -462,6 +464,47 @@
     pointer-events: none;
   }
   .toast.show { opacity: .95; }
+
+  /* ===== 横屏：左右两栏，地图按高度放大，右侧放命令与按钮 ===== */
+  @media (orientation: landscape) {
+    body { justify-content: flex-start; }
+    .game-wrap { max-width: 100%; }
+    /* 让 .main 变成真正的两栏盒子 */
+    .main {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: center;
+    }
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 460px;
+      justify-content: center;
+    }
+    /* 地图占左侧，按可用高度决定大小（正方形），留出标题和状态栏的空间 */
+    #board {
+      flex: 0 0 auto;
+      width: auto;
+      height: calc(100vh - 96px);
+      max-height: calc(100vh - 96px);
+      aspect-ratio: 1 / 1;
+    }
+  }
+  /* 矮屏（手机横屏）：标题更小、按钮更紧凑，进一步省高度 */
+  @media (orientation: landscape) and (max-height: 560px) {
+    body { padding: 8px; }
+    h1 { font-size: 18px; margin: 2px 0; }
+    .main { gap: 12px; }
+    #board { height: calc(100vh - 70px); max-height: calc(100vh - 70px); padding: 8px; }
+    .program { min-height: 48px; }
+    button.cmd { padding: 10px 0; font-size: 14px; }
+    button.cmd .ico { font-size: 22px; }
+    button.act { padding: 11px 0; font-size: 14px; }
+  }
 </style>
 </head>
 <body>
@@ -474,39 +517,43 @@
       <button class="level-toggle" id="levelToggle">🗺 选关</button>
     </div>
 
-    <div id="board"></div>
+    <div class="main">
+      <div id="board"></div>
 
-    <div class="program" id="program"></div>
+      <div class="panel">
+        <div class="program" id="program"></div>
 
-    <div class="controls">
-      <button class="cmd btn-up"    id="btnUp"><span class="ico">⬆</span>上</button>
-      <button class="cmd btn-down"  id="btnDown"><span class="ico">⬇</span>下</button>
-      <button class="cmd btn-left"  id="btnLeft"><span class="ico">⬅</span>左</button>
-      <button class="cmd btn-right" id="btnRight"><span class="ico">➡</span>右</button>
-    </div>
+        <div class="controls">
+          <button class="cmd btn-up"    id="btnUp"><span class="ico">⬆</span>上</button>
+          <button class="cmd btn-down"  id="btnDown"><span class="ico">⬇</span>下</button>
+          <button class="cmd btn-left"  id="btnLeft"><span class="ico">⬅</span>左</button>
+          <button class="cmd btn-right" id="btnRight"><span class="ico">➡</span>右</button>
+        </div>
 
-    <div class="actions">
-      <button class="act btn-loop"  id="btnLoop">🔁 重复</button>
-      <button class="act btn-undo"  id="btnUndo">↩ 撤回</button>
-      <button class="act btn-clear" id="btnClear">🗑 清空</button>
-      <button class="act btn-run"   id="btnRun">▶ 出发！</button>
-    </div>
+        <div class="actions">
+          <button class="act btn-loop"  id="btnLoop">🔁 重复</button>
+          <button class="act btn-undo"  id="btnUndo">↩ 撤回</button>
+          <button class="act btn-clear" id="btnClear">🗑 清空</button>
+          <button class="act btn-run"   id="btnRun">▶ 出发！</button>
+        </div>
 
-    <!-- 自由搭建：调色板 + 按钮（平时隐藏） -->
-    <div class="editor" id="editor">
-      <div class="edit-hint">先点一个工具，再点格子来画 👇</div>
-      <div class="palette" id="palette">
-        <button class="brush current" data-brush="wall">🪨<span>石头</span></button>
-        <button class="brush" data-brush="star">⭐<span>星星</span></button>
-        <button class="brush" data-brush="start">🤖<span>起点</span></button>
-        <button class="brush" data-brush="goal">🔋<span>电池</span></button>
-        <button class="brush" data-brush="erase">🧹<span>擦掉</span></button>
-      </div>
-      <div class="edit-actions">
-        <button class="act btn-edit-size"  id="btnEditSize">📐 换大小</button>
-        <button class="act btn-edit-clear" id="btnEditClear">🗑 清空</button>
-        <button class="act btn-edit-back"  id="btnEditBack">← 返回</button>
-        <button class="act btn-edit-play"  id="btnEditPlay">▶ 开始玩</button>
+        <!-- 自由搭建：调色板 + 按钮（平时隐藏） -->
+        <div class="editor" id="editor">
+          <div class="edit-hint">先点一个工具，再点格子来画 👇</div>
+          <div class="palette" id="palette">
+            <button class="brush current" data-brush="wall">🪨<span>石头</span></button>
+            <button class="brush" data-brush="star">⭐<span>星星</span></button>
+            <button class="brush" data-brush="start">🤖<span>起点</span></button>
+            <button class="brush" data-brush="goal">🔋<span>电池</span></button>
+            <button class="brush" data-brush="erase">🧹<span>擦掉</span></button>
+          </div>
+          <div class="edit-actions">
+            <button class="act btn-edit-size"  id="btnEditSize">📐 换大小</button>
+            <button class="act btn-edit-clear" id="btnEditClear">🗑 清空</button>
+            <button class="act btn-edit-back"  id="btnEditBack">← 返回</button>
+            <button class="act btn-edit-play"  id="btnEditPlay">▶ 开始玩</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
