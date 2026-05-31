@@ -259,7 +259,6 @@
     animation: pop .2s;
   }
   .loop-chip.running { outline: 4px solid #ffd86b; }
-  .loop-chip .loop-ico { font-size: 18px; }
   .loop-chip .loop-count { font-size: 18px; font-weight: bold; min-width: 16px; text-align: center; }
   .loop-chip .loop-x { font-size: 14px; opacity: .85; }
   .loop-chip .loop-btn {
@@ -750,7 +749,6 @@ function renderProgram() {
       box.dataset.index = i;
       box.innerHTML =
         `<button class="loop-btn" data-act="dec" data-i="${i}">−</button>` +
-        `<span class="loop-ico">🔁</span>` +
         `<span class="loop-x">×</span>` +
         `<span class="loop-count">${cmd.loop}</span>` +
         `<button class="loop-btn" data-act="inc" data-i="${i}">＋</button>`;
@@ -813,28 +811,23 @@ function setButtonsDisabled(disabled) {
 }
 
 /* 把带循环的命令展开成一串实际要走的步骤。
-   每个循环块 {loop:N} 会把它后面紧跟的那串方向命令重复 N 次。
+   每个循环块 {loop:N} 会把它【前面】紧跟的那串方向命令重复 N 次。
    返回数组，每项 { dir, idx }，idx 指向要高亮的命令块。 */
 function flattenProgram() {
   const steps = [];
-  let i = 0;
-  while (i < program.length) {
+  let group = [];  // 当前这一组（上一个循环之后排的方向命令）
+  for (let i = 0; i < program.length; i++) {
     const item = program[i];
     if (typeof item === 'object' && item.loop !== undefined) {
-      // 收集这个循环后面紧跟的方向命令（直到下一个循环或结尾）
-      const group = [];
-      let j = i + 1;
-      while (j < program.length && typeof program[j] === 'string') {
-        group.push({ dir: program[j], idx: j });
-        j++;
-      }
-      for (let r = 0; r < item.loop; r++) {
+      // 把前面这组动作再重复 (N-1) 次（第一次已经排进去了）
+      for (let r = 1; r < item.loop; r++) {
         for (const g of group) steps.push(g);
       }
-      i = j;
+      group = [];  // 循环之后重新开始数下一组
     } else {
-      steps.push({ dir: item, idx: i });
-      i++;
+      const st = { dir: item, idx: i };
+      steps.push(st);
+      group.push(st);
     }
   }
   return steps;
