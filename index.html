@@ -38,12 +38,6 @@
     margin: 6px 0 2px;
     text-align: center;
   }
-  .subtitle {
-    font-size: 15px;
-    color: #7a89ad;
-    margin-bottom: 10px;
-    text-align: center;
-  }
   .game-wrap {
     width: 100%;
     max-width: 460px;
@@ -229,12 +223,6 @@
     gap: 6px;
     align-content: flex-start;
   }
-  .program .placeholder {
-    color: #b3c0dd;
-    font-size: 15px;
-    align-self: center;
-    margin: auto;
-  }
   .chip {
     width: 42px; height: 42px;
     border-radius: 12px;
@@ -365,7 +353,6 @@
 </head>
 <body>
   <h1>🤖 小机器人去充电</h1>
-  <div class="subtitle">用按钮排好命令，让机器人走到 🔋 那里</div>
 
   <div class="game-wrap">
     <div class="status-bar">
@@ -376,9 +363,7 @@
 
     <div id="board"></div>
 
-    <div class="program" id="program">
-      <span class="placeholder">↑ 点下面的按钮，给机器人下命令</span>
-    </div>
+    <div class="program" id="program"></div>
 
     <div class="controls">
       <button class="cmd btn-up"    id="btnUp"><span class="ico">⬆</span>上</button>
@@ -712,11 +697,8 @@ function placeRobot(animate) {
 
 /* 渲染程序条 */
 function renderProgram() {
-  if (program.length === 0) {
-    programEl.innerHTML = '<span class="placeholder">↑ 点下面的按钮，给机器人下命令</span>';
-    return;
-  }
   programEl.innerHTML = '';
+  if (program.length === 0) return;
   program.forEach((cmd, i) => {
     const chip = document.createElement('div');
     chip.className = 'chip cmd-' + cmd;
