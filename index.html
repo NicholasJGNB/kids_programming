@@ -144,21 +144,24 @@
     animation: pop .2s;
   }
   @keyframes pop { from { scale: .4; } to { scale: 1; } }
-  .chip.cmd-forward { background: var(--green); }
-  .chip.cmd-left, .chip.cmd-right { background: var(--orange); }
+  .chip.cmd-up, .chip.cmd-down, .chip.cmd-left, .chip.cmd-right { background: var(--green); }
   .chip.running { outline: 4px solid #ffd86b; }
 
   /* 按钮区 */
   .controls {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 10px;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
   }
   button.cmd {
     border: none;
     border-radius: 16px;
     padding: 16px 0;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     color: #fff;
     cursor: pointer;
@@ -168,11 +171,15 @@
     align-items: center;
     gap: 2px;
     transition: translate .08s;
+    background: var(--green);
   }
   button.cmd:active { translate: 0 4px; box-shadow: 0 1px 0 rgba(0,0,0,.15); }
-  button.cmd .ico { font-size: 26px; }
-  .btn-forward { background: var(--green); }
-  .btn-left, .btn-right { background: var(--orange); }
+  button.cmd .ico { font-size: 28px; }
+  /* 十字方向键布局：上 / 左 右 / 下 */
+  .btn-up    { grid-area: 1 / 2 / 2 / 3; }
+  .btn-left  { grid-area: 2 / 1 / 3 / 2; }
+  .btn-right { grid-area: 2 / 3 / 3 / 4; }
+  .btn-down  { grid-area: 3 / 2 / 4 / 3; }
 
   .actions {
     display: grid;
@@ -265,9 +272,10 @@
     </div>
 
     <div class="controls">
-      <button class="cmd btn-left"   id="btnLeft">   <span class="ico">↰</span>向左转</button>
-      <button class="cmd btn-forward" id="btnForward"><span class="ico">⬆</span>向前走</button>
-      <button class="cmd btn-right"  id="btnRight">  <span class="ico">↱</span>向右转</button>
+      <button class="cmd btn-up"    id="btnUp"><span class="ico">⬆</span>上</button>
+      <button class="cmd btn-left"  id="btnLeft"><span class="ico">⬅</span>左</button>
+      <button class="cmd btn-right" id="btnRight"><span class="ico">➡</span>右</button>
+      <button class="cmd btn-down"  id="btnDown"><span class="ico">⬇</span>下</button>
     </div>
 
     <div class="actions">
@@ -297,37 +305,37 @@
    walls 是障碍格子（石头），机器人不能走进去。
 */
 const LEVELS = [
-  { // 第1关：直直走两步（教"向前走"）
+  { // 第1关：往右直直走
     cols: 4, rows: 4,
-    start: { x: 0, y: 3, dir: 1 },
+    start: { x: 0, y: 3 },
     goal:  { x: 3, y: 3 },
     walls: [],
-    hint: "一直向前走，找到电池！"
+    hint: "一直往右走，找到电池！"
   },
-  { // 第2关：需要一次转弯（教"转弯")
+  { // 第2关：拐一个弯
     cols: 4, rows: 4,
-    start: { x: 0, y: 3, dir: 1 },
+    start: { x: 0, y: 3 },
     goal:  { x: 3, y: 0 },
     walls: [],
-    hint: "先向前，再向左转哦～"
+    hint: "先往右，再往上走！"
   },
   { // 第3关：绕开一块石头
     cols: 5, rows: 5,
-    start: { x: 0, y: 4, dir: 1 },
+    start: { x: 0, y: 4 },
     goal:  { x: 4, y: 4 },
     walls: [ {x:2,y:4} ],
     hint: "当心石头，要绕过去！"
   },
   { // 第4关：走一个"L"形
     cols: 5, rows: 5,
-    start: { x: 0, y: 4, dir: 0 },
+    start: { x: 0, y: 4 },
     goal:  { x: 4, y: 0 },
     walls: [ {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3} ],
-    hint: "先往上走到顶，再向右转！"
+    hint: "先一直往上，再往右走！"
   },
   { // 第5关：S形小迷宫
     cols: 6, rows: 6,
-    start: { x: 0, y: 5, dir: 0 },
+    start: { x: 0, y: 5 },
     goal:  { x: 5, y: 0 },
     walls: [
       {x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},
@@ -337,12 +345,17 @@ const LEVELS = [
   }
 ];
 
-// 方向 -> 机器人朝向的旋转角度（机器人emoji默认朝右）
-const DIR_ROTATE = { 0: -90, 1: 0, 2: 90, 3: 180 };
-const DIR_DELTA  = { 0: {x:0,y:-1}, 1: {x:1,y:0}, 2: {x:0,y:1}, 3: {x:-1,y:0} };
+// 四个方向各走一格
+const MOVE_DELTA = {
+  up:    { x: 0,  y: -1 },
+  down:  { x: 0,  y: 1 },
+  left:  { x: -1, y: 0 },
+  right: { x: 1,  y: 0 }
+};
+const ARROW = { up: '⬆', down: '⬇', left: '⬅', right: '➡' };
 
 let levelIndex = 0;
-let program = [];        // 当前命令序列，例如 ['forward','left',...]
+let program = [];        // 当前命令序列，例如 ['right','up',...]
 let robot = null;        // {x, y, dir}
 let isRunning = false;
 
@@ -379,7 +392,7 @@ function buildBoard() {
   }
 
   // 机器人
-  robot = { x: lv.start.x, y: lv.start.y, dir: lv.start.dir };
+  robot = { x: lv.start.x, y: lv.start.y };
   const r = document.createElement('div');
   r.className = 'robot';
   r.id = 'robot';
@@ -402,7 +415,6 @@ function placeRobot(animate) {
   r.style.top    = cell.offsetTop + 'px';
   r.style.width  = cell.offsetWidth + 'px';
   r.style.height = cell.offsetHeight + 'px';
-  r.style.transform = `rotate(${DIR_ROTATE[robot.dir]}deg)`;
   if (!animate) {
     // 强制重绘后恢复动画
     void r.offsetWidth;
@@ -421,7 +433,7 @@ function renderProgram() {
     const chip = document.createElement('div');
     chip.className = 'chip cmd-' + cmd;
     chip.dataset.index = i;
-    chip.textContent = cmd === 'forward' ? '⬆' : (cmd === 'left' ? '↰' : '↱');
+    chip.textContent = ARROW[cmd];
     programEl.appendChild(chip);
   });
 }
@@ -473,23 +485,18 @@ async function run() {
     if (chips[i]) chips[i].classList.add('running');
     const cmd = program[i];
 
-    if (cmd === 'left')  robot.dir = (robot.dir + 3) % 4;
-    if (cmd === 'right') robot.dir = (robot.dir + 1) % 4;
-
-    if (cmd === 'forward') {
-      const d = DIR_DELTA[robot.dir];
-      const nx = robot.x + d.x;
-      const ny = robot.y + d.y;
-      if (!canMoveTo(nx, ny)) {
-        // 撞墙或出界：抖一抖，结束
-        bump();
-        await sleep(500);
-        finishRun(false, '哎呀，撞到啦！', '机器人不能走出地图或撞石头哦，再想想顺序～', '😅', '再试一次');
-        return;
-      }
-      robot.x = nx;
-      robot.y = ny;
+    const d = MOVE_DELTA[cmd];
+    const nx = robot.x + d.x;
+    const ny = robot.y + d.y;
+    if (!canMoveTo(nx, ny)) {
+      // 撞墙或出界：抖一抖，结束
+      bump();
+      await sleep(500);
+      finishRun(false, '哎呀，撞到啦！', '机器人不能走出地图或撞石头哦，再想想怎么走～', '😅', '再试一次');
+      return;
     }
+    robot.x = nx;
+    robot.y = ny;
     placeRobot(true);
     await sleep(450);
 
@@ -568,9 +575,10 @@ function toast(msg) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 /* 绑定按钮 */
-document.getElementById('btnForward').onclick = () => addCommand('forward');
-document.getElementById('btnLeft').onclick    = () => addCommand('left');
-document.getElementById('btnRight').onclick   = () => addCommand('right');
+document.getElementById('btnUp').onclick    = () => addCommand('up');
+document.getElementById('btnDown').onclick  = () => addCommand('down');
+document.getElementById('btnLeft').onclick  = () => addCommand('left');
+document.getElementById('btnRight').onclick = () => addCommand('right');
 document.getElementById('btnUndo').onclick    = undo;
 document.getElementById('btnClear').onclick   = clearProgram;
 document.getElementById('btnRun').onclick     = run;
