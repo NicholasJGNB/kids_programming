@@ -244,28 +244,42 @@
   @keyframes pop { from { scale: .4; } to { scale: 1; } }
   .chip.cmd-up, .chip.cmd-down, .chip.cmd-left, .chip.cmd-right { background: var(--green); }
   .chip.running { outline: 4px solid #ffd86b; }
-  /* 循环块：紫色，带 −次数+ 调节 */
+  /* 循环"圈"：紫色外框，里面装着被重复的动作 */
   .loop-chip {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 2px;
-    height: 42px;
-    padding: 0 6px;
-    border-radius: 12px;
-    background: #b98bff;
-    color: #fff;
-    box-shadow: 0 3px 0 rgba(0,0,0,.12);
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 14px;
+    background: #efe6ff;
+    border: 2px dashed #b98bff;
     animation: pop .2s;
   }
-  .loop-chip.running { outline: 4px solid #ffd86b; }
+  .loop-chip.open { border-style: solid; box-shadow: 0 0 0 3px rgba(185,139,255,.3); }
+  .loop-chip .loop-head {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #b98bff;
+    color: #fff;
+    border-radius: 10px;
+    padding: 2px 4px;
+    height: 42px;
+  }
+  .loop-chip .loop-body {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .loop-chip .loop-ph { color: #a98fd6; font-size: 13px; padding: 0 6px; white-space: nowrap; }
   .loop-chip .loop-count { font-size: 18px; font-weight: bold; min-width: 16px; text-align: center; }
   .loop-chip .loop-x { font-size: 14px; opacity: .85; }
   .loop-chip .loop-btn {
     width: 22px; height: 22px;
     border: none;
     border-radius: 7px;
-    background: rgba(255,255,255,.25);
+    background: rgba(255,255,255,.3);
     color: #fff;
     font-size: 17px;
     font-weight: bold;
@@ -273,7 +287,7 @@
     cursor: pointer;
     padding: 0;
   }
-  .loop-chip .loop-btn:active { background: rgba(255,255,255,.45); }
+  .loop-chip .loop-btn:active { background: rgba(255,255,255,.55); }
 
   /* 按钮区 */
   .controls {
@@ -974,44 +988,89 @@ function placeRobot(animate) {
   }
 }
 
-/* 渲染程序条。方向命令是绿色箭头方块，循环是紫色的 🔁−N+ 块 */
+/* 当前打开着的循环（它的 body 在收集后续动作）；null 表示没开循环 */
+let openLoop = null;
+
+/* 一个方向命令做成箭头方块 */
+function makeChip(cmd, key) {
+  const chip = document.createElement('div');
+  chip.className = 'chip cmd-' + cmd;
+  chip.dataset.key = key;
+  chip.textContent = ARROW[cmd];
+  return chip;
+}
+
+/* 渲染程序条。循环是一个紫色"圈"，里面装着被重复的动作 */
 function renderProgram() {
   programEl.innerHTML = '';
   if (program.length === 0) return;
-  program.forEach((cmd, i) => {
-    if (typeof cmd === 'object' && cmd.loop !== undefined) {
-      // 循环块
+  program.forEach((item, i) => {
+    if (typeof item === 'object' && item.loop !== undefined) {
+      // 循环"圈"
       const box = document.createElement('div');
-      box.className = 'loop-chip';
+      box.className = 'loop-chip' + (item.open ? ' open' : '');
       box.dataset.index = i;
-      box.innerHTML =
+      // 次数调节
+      const head = document.createElement('div');
+      head.className = 'loop-head';
+      head.innerHTML =
         `<button class="loop-btn" data-act="dec" data-i="${i}">−</button>` +
         `<span class="loop-x">×</span>` +
-        `<span class="loop-count">${cmd.loop}</span>` +
+        `<span class="loop-count">${item.loop}</span>` +
         `<button class="loop-btn" data-act="inc" data-i="${i}">＋</button>`;
+      box.appendChild(head);
+      // 圈里的动作
+      const body = document.createElement('div');
+      body.className = 'loop-body';
+      item.body.forEach((c, j) => body.appendChild(makeChip(c, i + '-' + j)));
+      if (item.open && item.body.length === 0) {
+        const ph = document.createElement('span');
+        ph.className = 'loop-ph';
+        ph.textContent = '把动作放进来…';
+        body.appendChild(ph);
+      }
+      box.appendChild(body);
       programEl.appendChild(box);
     } else {
-      const chip = document.createElement('div');
-      chip.className = 'chip cmd-' + cmd;
-      chip.dataset.index = i;
-      chip.textContent = ARROW[cmd];
-      programEl.appendChild(chip);
+      programEl.appendChild(makeChip(item, '' + i));
     }
   });
-  // 命令多时自动滑到最右，露出刚加的命令
   programEl.scrollLeft = programEl.scrollWidth;
 }
 
-/* 加一个循环块（默认重复2次） */
-function addLoop() {
-  if (isRunning) return;
-  if (program.length >= 60) { toast('命令有点太多啦～'); return; }
-  program.push({ loop: 2 });
-  renderProgram();
-  tone(740, 0.07, 0, 'square', 0.12);
+/* 命令总数（含循环里的），防止排太多 */
+function totalCount() {
+  let n = 0;
+  for (const it of program) n += (typeof it === 'object' && it.loop !== undefined) ? it.body.length + 1 : 1;
+  return n;
 }
 
-/* 调整某个循环块的次数（2~9） */
+/* 点 🔁：没开循环就开一个圈，已开就收口 */
+function addLoop() {
+  if (isRunning) return;
+  if (openLoop) {
+    // 收口；如果圈里是空的，就把这个空圈删掉
+    if (openLoop.body.length === 0) program = program.filter(it => it !== openLoop);
+    openLoop.open = false;
+    openLoop = null;
+    tone(560, 0.08, 0, 'square', 0.12);
+  } else {
+    if (totalCount() >= 60) { toast('命令有点太多啦～'); return; }
+    openLoop = { loop: 2, body: [], open: true };
+    program.push(openLoop);
+    tone(740, 0.07, 0, 'square', 0.12);
+  }
+  updateLoopBtn();
+  renderProgram();
+}
+
+/* 循环按钮文字随状态变化 */
+function updateLoopBtn() {
+  const b = document.getElementById('btnLoop');
+  if (b) b.textContent = openLoop ? '✓ 结束圈' : '🔁 重复';
+}
+
+/* 调整循环次数（2~9） */
 function changeLoop(i, delta) {
   if (isRunning) return;
   const item = program[i];
@@ -1021,22 +1080,36 @@ function changeLoop(i, delta) {
   tone(880, 0.05, 0, 'square', 0.1);
 }
 
+/* 加方向命令：圈开着就放进圈里，否则放到外面 */
 function addCommand(cmd) {
   if (isRunning) return;
-  if (program.length >= 60) { toast('命令有点太多啦～'); return; }
-  program.push(cmd);
+  if (totalCount() >= 60) { toast('命令有点太多啦～'); return; }
+  if (openLoop) openLoop.body.push(cmd);
+  else program.push(cmd);
   renderProgram();
 }
 
+/* 撤回：优先从打开的圈里撤，圈空了再撤外面 */
 function undo() {
   if (isRunning) return;
-  program.pop();
+  if (openLoop && openLoop.body.length > 0) {
+    openLoop.body.pop();
+  } else if (openLoop) {
+    // 空圈，撤回就把圈也去掉
+    program = program.filter(it => it !== openLoop);
+    openLoop = null;
+    updateLoopBtn();
+  } else {
+    program.pop();
+  }
   renderProgram();
 }
 
 function clearProgram() {
   if (isRunning) return;
   program = [];
+  openLoop = null;
+  updateLoopBtn();
   renderProgram();
   buildBoard(); // 机器人回到起点
 }
@@ -1048,25 +1121,19 @@ function setButtonsDisabled(disabled) {
 }
 
 /* 把带循环的命令展开成一串实际要走的步骤。
-   每个循环块 {loop:N} 会把它【前面】紧跟的那串方向命令重复 N 次。
-   返回数组，每项 { dir, idx }，idx 指向要高亮的命令块。 */
+   循环"圈"会把它 body 里的动作整组重复 N 次。
+   返回数组，每项 { dir, key }，key 指向要高亮的命令方块。 */
 function flattenProgram() {
   const steps = [];
-  let group = [];  // 当前这一组（上一个循环之后排的方向命令）
-  for (let i = 0; i < program.length; i++) {
-    const item = program[i];
+  program.forEach((item, i) => {
     if (typeof item === 'object' && item.loop !== undefined) {
-      // 把前面这组动作再重复 (N-1) 次（第一次已经排进去了）
-      for (let r = 1; r < item.loop; r++) {
-        for (const g of group) steps.push(g);
+      for (let r = 0; r < item.loop; r++) {
+        item.body.forEach((c, j) => steps.push({ dir: c, key: i + '-' + j }));
       }
-      group = [];  // 循环之后重新开始数下一组
     } else {
-      const st = { dir: item, idx: i };
-      steps.push(st);
-      group.push(st);
+      steps.push({ dir: item, key: '' + i });
     }
-  }
+  });
   return steps;
 }
 
@@ -1076,9 +1143,18 @@ function clearRunHighlight() {
 
 /* 运行程序：一步步执行 */
 async function run() {
+  if (isRunning) return;
+  // 出发前自动收口还开着的循环圈
+  if (openLoop) {
+    if (openLoop.body.length === 0) program = program.filter(it => it !== openLoop);
+    openLoop.open = false;
+    openLoop = null;
+    updateLoopBtn();
+    renderProgram();
+  }
   const steps = flattenProgram();
-  if (isRunning || steps.length === 0) {
-    if (steps.length === 0) toast('先给机器人下几个走路命令吧～');
+  if (steps.length === 0) {
+    toast('先给机器人下几个走路命令吧～');
     return;
   }
   isRunning = true;
@@ -1090,11 +1166,12 @@ async function run() {
 
   for (let s = 0; s < steps.length; s++) {
     clearRunHighlight();
-    const active = programEl.querySelector(`[data-index="${steps[s].idx}"]`);
+    const active = programEl.querySelector(`[data-key="${steps[s].key}"]`);
     if (active) {
       active.classList.add('running');
       // 只在命令条内部横向滚动，让当前命令居中可见（不动整个页面）
-      programEl.scrollLeft = active.offsetLeft - programEl.clientWidth / 2 + active.offsetWidth / 2;
+      const box = active.closest('.loop-chip') || active;
+      programEl.scrollLeft = box.offsetLeft - programEl.clientWidth / 2 + box.offsetWidth / 2;
     }
     const cmd = steps[s].dir;
 
