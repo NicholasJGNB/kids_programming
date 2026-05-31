@@ -541,8 +541,8 @@
         <div class="editor" id="editor">
           <div class="edit-hint">先点一个工具，再点格子来画 👇</div>
           <div class="palette" id="palette">
-            <button class="brush current" data-brush="wall">🪨<span>石头</span></button>
-            <button class="brush" data-brush="star">⭐<span>星星</span></button>
+            <button class="brush current" data-brush="wall">🪨<span>障碍</span></button>
+            <button class="brush" data-brush="star">⭐<span>宝贝</span></button>
             <button class="brush" data-brush="start">🤖<span>起点</span></button>
             <button class="brush" data-brush="goal">🔋<span>电池</span></button>
             <button class="brush" data-brush="erase">🧹<span>擦掉</span></button>
@@ -584,8 +584,9 @@
 
 /* ===== 关卡数据 =====
    每一关是一张方格地图。
-   start 起点 / goal 电池终点 / walls 石头(走不进) / stars 路上要收集的⭐(可选)
-   有 stars 的关卡，必须把所有⭐都捡完、再走到🔋才算过关。
+   start 起点 / goal 电池终点 / walls 障碍(走不进) / stars 路上要收集的宝贝(可选)
+   有 stars 的关卡，必须把所有宝贝都捡完、再走到🔋才算过关。
+   障碍和宝贝的"皮肤"由 WALL_EMOJIS / REWARD_EMOJIS 随位置变化，更丰富。
 */
 const LEVELS = [
   // —— 第一组：认识走路（无障碍）——
@@ -604,13 +605,13 @@ const LEVELS = [
   { // 4 路上捡一颗星星
     cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:4}, walls: [],
     stars: [ {x:2,y:4} ],
-    hint: "路上有颗⭐，记得捡走它！"
+    hint: "路上有个宝贝，记得捡走它！"
   },
 
   // —— 第二组：开始有石头 ——
   { // 5 绕开一块石头
     cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:4}, walls: [ {x:2,y:4} ],
-    hint: "当心石头，要绕过去！"
+    hint: "当心障碍，要绕过去！"
   },
   { // 6 走 L 形
     cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:0},
@@ -620,7 +621,7 @@ const LEVELS = [
   { // 7 边走边捡两颗星
     cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:0}, walls: [],
     stars: [ {x:2,y:4},{x:2,y:0} ],
-    hint: "把两颗⭐都捡到，再去充电！"
+    hint: "把两个宝贝都捡到，再去充电！"
   },
   { // 8 门洞：中间留一个口
     cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:4},
@@ -641,7 +642,7 @@ const LEVELS = [
     cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:0,y:0},
     walls: [ {x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},{x:2,y:1},{x:3,y:1},{x:4,y:1} ],
     stars: [ {x:5,y:5},{x:5,y:0} ],
-    hint: "先去右边捡两颗⭐，再绕回来！"
+    hint: "先去右边捡两个宝贝，再绕回来！"
   },
   { // 11 梳子形
     cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:5},
@@ -655,7 +656,7 @@ const LEVELS = [
     cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:0},
     walls: [ {x:2,y:5},{x:2,y:4},{x:2,y:3},{x:4,y:0},{x:4,y:1},{x:4,y:2} ],
     stars: [ {x:1,y:0},{x:3,y:5},{x:5,y:5} ],
-    hint: "三颗⭐都要捡到哦，动动脑筋！"
+    hint: "三个宝贝都要捡到哦，动动脑筋！"
   },
 
   // —— 第四组：大迷宫挑战（7x7）——
@@ -685,7 +686,7 @@ const LEVELS = [
       {x:5,y:3},{x:6,y:3}
     ],
     stars: [ {x:0,y:0},{x:6,y:0} ],
-    hint: "上去捡两颗⭐，再下来充电！"
+    hint: "上去捡两个宝贝，再下来充电！"
   },
   { // 16 迷宫C
     cols: 7, rows: 7, start: {x:0,y:0}, goal: {x:6,y:6},
@@ -717,7 +718,7 @@ const LEVELS = [
       {x:6,y:5},{x:7,y:5}
     ],
     stars: [ {x:0,y:0},{x:4,y:0},{x:7,y:0} ],
-    hint: "最后一关！捡齐三颗⭐再去充电，你就是编程小高手！"
+    hint: "最后一关！捡齐三个宝贝再去充电，你就是编程小高手！"
   }
 ];
 
@@ -729,6 +730,15 @@ const MOVE_DELTA = {
   right: { x: 1,  y: 0 }
 };
 const ARROW = { up: '⬆', down: '⬇', left: '⬅', right: '➡' };
+
+// 障碍物和奖励的"皮肤"——同一格固定、不同格丰富变化，让画面更有趣
+const WALL_EMOJIS   = ['🪨','💩','🌵','🔥','🧱','🌳','🚧','🦔'];
+const REWARD_EMOJIS = ['⭐','💎','🍎','🍓','🎁','🍪','🍰','🍭','🍌','🏆'];
+// 用坐标算一个稳定的"随机"序号，保证同一关同一格图案不变
+function pickEmoji(list, x, y) {
+  const seed = (levelIndex + 7) * 131 + x * 17 + y * 31;
+  return list[seed % list.length];
+}
 
 let levelIndex = 0;       // -1 表示正在玩"自己造的关"
 // 命令序列。每一项是方向 'up'/'down'/'left'/'right'，
@@ -764,7 +774,7 @@ function buildBoard() {
       cell.dataset.y = y;
       if (lv.walls.some(w => w.x === x && w.y === y)) {
         cell.classList.add('wall');
-        cell.textContent = '🪨';
+        cell.textContent = pickEmoji(WALL_EMOJIS, x, y);
       }
       if (lv.goal && lv.goal.x === x && lv.goal.y === y) {
         cell.classList.add('goal');
@@ -773,7 +783,7 @@ function buildBoard() {
       if ((lv.stars || []).some(s => s.x === x && s.y === y)) {
         cell.classList.add('star');
         cell.dataset.star = '1';
-        cell.textContent = '⭐';
+        cell.textContent = pickEmoji(REWARD_EMOJIS, x, y);
       }
       // 编辑模式下，起点格显示一个淡淡的🤖标记
       if (editing && lv.start && lv.start.x === x && lv.start.y === y && !(lv.goal && lv.goal.x===x && lv.goal.y===y)) {
@@ -960,7 +970,7 @@ function validateCustom() {
   }
   if (!seen.has(lv.goal.x + ',' + lv.goal.y)) return '机器人走不到电池，挪挪石头试试～';
   for (const s of lv.stars) {
-    if (!seen.has(s.x + ',' + s.y)) return '有颗⭐被石头围住了，机器人拿不到哦';
+    if (!seen.has(s.x + ',' + s.y)) return '有个宝贝被障碍围住了，机器人拿不到哦';
   }
   return null; // 没问题
 }
@@ -993,24 +1003,26 @@ function collectStarHere() {
   if (!starsLeft.has(key)) return;
   starsLeft.delete(key);
   const cell = boardEl.querySelector(`.cell[data-star][data-x="${robot.x}"][data-y="${robot.y}"]`);
+  let emoji = '⭐';
   if (cell) {
+    emoji = cell.textContent || '⭐';
     cell.classList.remove('star');
     cell.removeAttribute('data-star');
     cell.textContent = '';
   }
-  // 飞出一颗⭐的小动画 + 叮的一声
-  starBurst(robot.x, robot.y);
+  // 飞出刚捡到的那个奖励的小动画 + 叮的一声
+  starBurst(robot.x, robot.y, emoji);
   tone(1318, 0.12, 0, 'triangle', 0.2);
   tone(1760, 0.12, 0.06, 'triangle', 0.18);
 }
 
-/* 收集星星时冒出的小动画 */
-function starBurst(x, y) {
+/* 收集奖励时冒出的小动画 */
+function starBurst(x, y, emoji) {
   const cell = boardEl.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
   if (!cell) return;
   const s = document.createElement('div');
   s.className = 'star-burst';
-  s.textContent = '⭐';
+  s.textContent = emoji || '⭐';
   s.style.left = (cell.offsetLeft + cell.offsetWidth / 2 - 14) + 'px';
   s.style.top  = (cell.offsetTop + cell.offsetHeight / 2 - 14) + 'px';
   boardEl.appendChild(s);
@@ -1231,8 +1243,8 @@ async function run() {
       await crash(d, nx, ny);
       const hitRock = level().walls.some(w => w.x === nx && w.y === ny);
       finishRun(false,
-        hitRock ? '咣！撞到石头啦！' : '哎呀，撞墙啦！',
-        hitRock ? '前面有块大石头 🪨，机器人过不去，要绕开它哦～' : '机器人不能走出地图，再想想怎么走～',
+        hitRock ? '咣！撞到障碍啦！' : '哎呀，撞墙啦！',
+        hitRock ? '前面有障碍挡路，机器人过不去，要绕开它哦～' : '机器人不能走出地图，再想想怎么走～',
         '😵', '再试一次');
       return;
     }
@@ -1250,8 +1262,8 @@ async function run() {
       if (starsLeft.size > 0) {
         clearRunHighlight();
         await sleep(200);
-        finishRun(false, '还差星星！',
-          `还有 ${starsLeft.size} 颗⭐没捡到呢，先把⭐都收集齐再来充电～`,
+        finishRun(false, '还差宝贝！',
+          `还有 ${starsLeft.size} 个宝贝没捡到呢，先把它们都收集齐再来充电～`,
           '🤔', '再试一次');
         return;
       }
