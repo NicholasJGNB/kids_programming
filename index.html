@@ -124,6 +124,18 @@
     box-shadow: inset 0 -4px 0 #aab8d8;
   }
   .cell.goal { background: #fff4d6; }
+  .cell.star { background: #fff9e6; }
+  .star-burst {
+    position: absolute;
+    z-index: 7;
+    font-size: 26px;
+    pointer-events: none;
+    animation: starfly .6s ease-out forwards;
+  }
+  @keyframes starfly {
+    0%   { transform: scale(.6) translateY(0); opacity: 1; }
+    100% { transform: scale(1.6) translateY(-30px); opacity: 0; }
+  }
   .robot {
     position: absolute;
     width: 100%; height: 100%;
@@ -363,47 +375,140 @@
 
 /* ===== 关卡数据 =====
    每一关是一张方格地图。
-   dir 方向：0=上, 1=右, 2=下, 3=左
-   walls 是障碍格子（石头），机器人不能走进去。
+   start 起点 / goal 电池终点 / walls 石头(走不进) / stars 路上要收集的⭐(可选)
+   有 stars 的关卡，必须把所有⭐都捡完、再走到🔋才算过关。
 */
 const LEVELS = [
-  { // 第1关：往右直直走
-    cols: 4, rows: 4,
-    start: { x: 0, y: 3 },
-    goal:  { x: 3, y: 3 },
-    walls: [],
+  // —— 第一组：认识走路（无障碍）——
+  { // 1 往右直直走
+    cols: 4, rows: 4, start: {x:0,y:3}, goal: {x:3,y:3}, walls: [],
     hint: "一直往右走，找到电池！"
   },
-  { // 第2关：拐一个弯
-    cols: 4, rows: 4,
-    start: { x: 0, y: 3 },
-    goal:  { x: 3, y: 0 },
-    walls: [],
+  { // 2 往上走
+    cols: 4, rows: 4, start: {x:0,y:3}, goal: {x:0,y:0}, walls: [],
+    hint: "一直往上走就到啦！"
+  },
+  { // 3 拐一个弯
+    cols: 4, rows: 4, start: {x:0,y:3}, goal: {x:3,y:0}, walls: [],
     hint: "先往右，再往上走！"
   },
-  { // 第3关：绕开一块石头
-    cols: 5, rows: 5,
-    start: { x: 0, y: 4 },
-    goal:  { x: 4, y: 4 },
-    walls: [ {x:2,y:4} ],
+  { // 4 路上捡一颗星星
+    cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:4}, walls: [],
+    stars: [ {x:2,y:4} ],
+    hint: "路上有颗⭐，记得捡走它！"
+  },
+
+  // —— 第二组：开始有石头 ——
+  { // 5 绕开一块石头
+    cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:4}, walls: [ {x:2,y:4} ],
     hint: "当心石头，要绕过去！"
   },
-  { // 第4关：走一个"L"形
-    cols: 5, rows: 5,
-    start: { x: 0, y: 4 },
-    goal:  { x: 4, y: 0 },
+  { // 6 走 L 形
+    cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:0},
     walls: [ {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3} ],
     hint: "先一直往上，再往右走！"
   },
-  { // 第5关：S形小迷宫
-    cols: 6, rows: 6,
-    start: { x: 0, y: 5 },
-    goal:  { x: 5, y: 0 },
+  { // 7 边走边捡两颗星
+    cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:0}, walls: [],
+    stars: [ {x:2,y:4},{x:2,y:0} ],
+    hint: "把两颗⭐都捡到，再去充电！"
+  },
+  { // 8 门洞：中间留一个口
+    cols: 5, rows: 5, start: {x:0,y:4}, goal: {x:4,y:4},
+    walls: [ {x:2,y:4},{x:2,y:3},{x:2,y:1},{x:2,y:0} ],
+    hint: "墙上有个洞，从中间钻过去！"
+  },
+
+  // —— 第三组：S 形与小迷宫 ——
+  { // 9 S 形迷宫
+    cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:0},
     walls: [
       {x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},
       {x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5}
     ],
     hint: "弯弯绕绕，慢慢想，你一定行！"
+  },
+  { // 10 绕圈捡星
+    cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:0,y:0},
+    walls: [ {x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},{x:2,y:1},{x:3,y:1},{x:4,y:1} ],
+    stars: [ {x:5,y:5},{x:5,y:0} ],
+    hint: "先去右边捡两颗⭐，再绕回来！"
+  },
+  { // 11 梳子形
+    cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:5},
+    walls: [
+      {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3},
+      {x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5}
+    ],
+    hint: "上上下下绕过两排栅栏！"
+  },
+  { // 12 三颗星星
+    cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:0},
+    walls: [ {x:2,y:5},{x:2,y:4},{x:2,y:3},{x:4,y:0},{x:4,y:1},{x:4,y:2} ],
+    stars: [ {x:1,y:0},{x:3,y:5},{x:5,y:5} ],
+    hint: "三颗⭐都要捡到哦，动动脑筋！"
+  },
+
+  // —— 第四组：大迷宫挑战（7x7）——
+  { // 13 走进中心的小屋（底部留门）
+    cols: 7, rows: 7, start: {x:0,y:6}, goal: {x:3,y:3},
+    walls: [
+      {x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},
+      {x:1,y:2},{x:5,y:2},{x:1,y:3},{x:5,y:3},{x:1,y:4},{x:5,y:4},
+      {x:1,y:5},{x:2,y:5},{x:4,y:5},{x:5,y:5}
+    ],
+    hint: "小屋只有一个门，从下面钻进去！"
+  },
+  { // 14 迷宫A
+    cols: 7, rows: 7, start: {x:0,y:6}, goal: {x:6,y:0},
+    walls: [
+      {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},
+      {x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5},{x:3,y:6},
+      {x:5,y:0},{x:5,y:1},{x:5,y:2},{x:5,y:3},{x:5,y:4}
+    ],
+    hint: "三道栅栏，找到缝隙穿过去！"
+  },
+  { // 15 迷宫B + 两颗星
+    cols: 7, rows: 7, start: {x:0,y:6}, goal: {x:6,y:6},
+    walls: [
+      {x:2,y:6},{x:2,y:5},{x:2,y:4},{x:2,y:3},
+      {x:4,y:1},{x:4,y:2},{x:4,y:3},
+      {x:5,y:3},{x:6,y:3}
+    ],
+    stars: [ {x:0,y:0},{x:6,y:0} ],
+    hint: "上去捡两颗⭐，再下来充电！"
+  },
+  { // 16 迷宫C
+    cols: 7, rows: 7, start: {x:0,y:0}, goal: {x:6,y:6},
+    walls: [
+      {x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},
+      {x:5,y:2},{x:5,y:3},{x:5,y:4},
+      {x:1,y:3},{x:1,y:4},{x:1,y:5},{x:2,y:5},{x:3,y:5}
+    ],
+    hint: "从左上到右下，绕过弯弯的墙！"
+  },
+
+  // —— 终极挑战（8x8）——
+  { // 17 大迷宫
+    cols: 8, rows: 8, start: {x:0,y:7}, goal: {x:7,y:0},
+    walls: [
+      {x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},{x:1,y:5},{x:1,y:6},
+      {x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5},
+      {x:5,y:2},{x:5,y:3},{x:5,y:4},{x:5,y:5},{x:5,y:6},{x:5,y:7},
+      {x:7,y:2},{x:7,y:3},{x:7,y:4}
+    ],
+    hint: "好大的迷宫！别着急，一步一步来。"
+  },
+  { // 18 终极：大迷宫 + 三颗星
+    cols: 8, rows: 8, start: {x:0,y:7}, goal: {x:7,y:7},
+    walls: [
+      {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},{x:1,y:5},
+      {x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5},{x:3,y:6},{x:3,y:7},
+      {x:5,y:1},{x:5,y:2},{x:5,y:3},{x:5,y:4},{x:5,y:5},
+      {x:6,y:5},{x:7,y:5}
+    ],
+    stars: [ {x:0,y:0},{x:4,y:0},{x:7,y:0} ],
+    hint: "最后一关！捡齐三颗⭐再去充电，你就是编程小高手！"
   }
 ];
 
@@ -421,6 +526,7 @@ let program = [];        // 当前命令序列，例如 ['right','up',...]
 let robot = null;        // {x, y, dir}
 let isRunning = false;
 let cleared = new Set(); // 已通关的关卡序号（用来显示 ⭐）
+let starsLeft = new Set(); // 本关还没捡到的星星
 
 const boardEl   = document.getElementById('board');
 const programEl = document.getElementById('program');
@@ -450,9 +556,17 @@ function buildBoard() {
         cell.classList.add('goal');
         cell.textContent = '🔋';
       }
+      if ((lv.stars || []).some(s => s.x === x && s.y === y)) {
+        cell.classList.add('star');
+        cell.dataset.star = '1';
+        cell.textContent = '⭐';
+      }
       boardEl.appendChild(cell);
     }
   }
+
+  // 这一关还没捡到的星星（坐标字符串集合）
+  starsLeft = new Set((lv.stars || []).map(s => s.x + ',' + s.y));
 
   // 机器人
   robot = { x: lv.start.x, y: lv.start.y };
@@ -491,6 +605,36 @@ function goToLevel(i) {
   program = [];
   renderProgram();
   buildBoard();
+}
+
+/* 机器人当前格子若有星星，就把它收集掉 */
+function collectStarHere() {
+  const key = robot.x + ',' + robot.y;
+  if (!starsLeft.has(key)) return;
+  starsLeft.delete(key);
+  const cell = boardEl.querySelector(`.cell[data-star][data-x="${robot.x}"][data-y="${robot.y}"]`);
+  if (cell) {
+    cell.classList.remove('star');
+    cell.removeAttribute('data-star');
+    cell.textContent = '';
+  }
+  // 飞出一颗⭐的小动画 + 叮的一声
+  starBurst(robot.x, robot.y);
+  tone(1318, 0.12, 0, 'triangle', 0.2);
+  tone(1760, 0.12, 0.06, 'triangle', 0.18);
+}
+
+/* 收集星星时冒出的小动画 */
+function starBurst(x, y) {
+  const cell = boardEl.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+  if (!cell) return;
+  const s = document.createElement('div');
+  s.className = 'star-burst';
+  s.textContent = '⭐';
+  s.style.left = (cell.offsetLeft + cell.offsetWidth / 2 - 14) + 'px';
+  s.style.top  = (cell.offsetTop + cell.offsetHeight / 2 - 14) + 'px';
+  boardEl.appendChild(s);
+  setTimeout(() => s.remove(), 600);
 }
 
 /* 把机器人div对齐到目标格子的真实位置（自动算准间距和留白） */
@@ -561,10 +705,9 @@ async function run() {
   }
   isRunning = true;
   setButtonsDisabled(true);
-  // 回到起点重新走
+  // 重建地图：机器人回起点、星星重新出现
+  buildBoard();
   const lv = level();
-  robot = { x: lv.start.x, y: lv.start.y, dir: lv.start.dir };
-  placeRobot(false);
   await sleep(300);
 
   const chips = programEl.querySelectorAll('.chip');
@@ -594,8 +737,19 @@ async function run() {
     soundStep();
     await sleep(450);
 
-    // 到达终点
+    // 踩到星星就收集
+    collectStarHere();
+
+    // 到达终点：必须把星星都捡完才算过关
     if (robot.x === lv.goal.x && robot.y === lv.goal.y) {
+      if (starsLeft.size > 0) {
+        chips.forEach(c => c.classList.remove('running'));
+        await sleep(200);
+        finishRun(false, '还差星星！',
+          `还有 ${starsLeft.size} 颗⭐没捡到呢，先把⭐都收集齐再来充电～`,
+          '🤔', '再试一次');
+        return;
+      }
       chips.forEach(c => c.classList.remove('running'));
       cleared.add(levelIndex);  // 记下这一关已通关，显示 ⭐
       cheer();
