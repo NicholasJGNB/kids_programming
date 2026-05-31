@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>小机器人去充电 · 编程启蒙游戏</title>
+<style>
+  :root {
+    --bg: #f4f7ff;
+    --panel: #ffffff;
+    --primary: #5b8def;
+    --primary-dark: #3f6fd1;
+    --green: #4cc38a;
+    --green-dark: #34a06f;
+    --orange: #ff9f43;
+    --pink: #ff6b9d;
+    --ink: #2c3e66;
+    --grid-line: #dfe6f5;
+    --cell: #eef3ff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "PingFang SC", "Microsoft YaHei", "Heiti SC", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    user-select: none;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+  }
+  h1 {
+    font-size: 26px;
+    margin: 6px 0 2px;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: #7a89ad;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .game-wrap {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 10px 16px;
+    box-shadow: 0 4px 14px rgba(91,141,239,.12);
+    font-size: 17px;
+    font-weight: bold;
+  }
+  .status-bar .level-name { color: var(--primary); }
+  .status-bar .hint { font-weight: normal; font-size: 14px; color: #7a89ad; }
+
+  /* 地图 */
+  #board {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 4px 18px rgba(91,141,239,.15);
+    display: grid;
+    gap: 4px;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+  }
+  .cell {
+    background: var(--cell);
+    border-radius: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+  }
+  .cell.wall {
+    background: #c9d3ea;
+    box-shadow: inset 0 -4px 0 #aab8d8;
+  }
+  .cell.goal { background: #fff4d6; }
+  .robot {
+    position: absolute;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    transition: left .35s ease, top .35s ease, transform .35s ease;
+    z-index: 5;
+    will-change: left, top, transform;
+  }
+  .robot.bump { animation: bump .4s; }
+  @keyframes bump {
+    0%,100% { scale: 1; }
+    30% { scale: 1.25; }
+    60% { scale: .9; }
+  }
+  .robot.cheer { animation: cheer .6s infinite; }
+  @keyframes cheer {
+    0%,100% { translate: 0 0; }
+    50% { translate: 0 -8px; }
+  }
+
+  /* 程序条 */
+  .program {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 14px rgba(91,141,239,.12);
+    min-height: 58px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-content: flex-start;
+  }
+  .program .placeholder {
+    color: #b3c0dd;
+    font-size: 15px;
+    align-self: center;
+    margin: auto;
+  }
+  .chip {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #fff;
+    box-shadow: 0 3px 0 rgba(0,0,0,.12);
+    animation: pop .2s;
+  }
+  @keyframes pop { from { scale: .4; } to { scale: 1; } }
+  .chip.cmd-forward { background: var(--green); }
+  .chip.cmd-left, .chip.cmd-right { background: var(--orange); }
+  .chip.running { outline: 4px solid #ffd86b; }
+
+  /* 按钮区 */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  button.cmd {
+    border: none;
+    border-radius: 16px;
+    padding: 16px 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 5px 0 rgba(0,0,0,.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: translate .08s;
+  }
+  button.cmd:active { translate: 0 4px; box-shadow: 0 1px 0 rgba(0,0,0,.15); }
+  button.cmd .ico { font-size: 26px; }
+  .btn-forward { background: var(--green); }
+  .btn-left, .btn-right { background: var(--orange); }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4fr;
+    gap: 10px;
+  }
+  button.act {
+    border: none;
+    border-radius: 16px;
+    padding: 14px 0;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 5px 0 rgba(0,0,0,.15);
+    transition: translate .08s;
+    color: #fff;
+  }
+  button.act:active { translate: 0 4px; box-shadow: 0 1px 0 rgba(0,0,0,.15); }
+  .btn-undo { background: #9aa6c4; }
+  .btn-clear { background: var(--pink); }
+  .btn-run { background: var(--primary); }
+  button:disabled { opacity: .5; cursor: default; }
+
+  /* 庆祝弹窗 */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(44,62,102,.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 28px 26px;
+    text-align: center;
+    max-width: 320px;
+    width: 86%;
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    animation: pop .3s;
+  }
+  .card .emoji { font-size: 56px; }
+  .card h2 { margin: 8px 0; font-size: 24px; color: var(--green-dark); }
+  .card p { color: #7a89ad; font-size: 15px; margin: 6px 0 18px; }
+  .card button {
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 14px 30px;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--primary-dark);
+  }
+  .card button:active { translate: 0 4px; box-shadow: 0 1px 0 var(--primary-dark); }
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    translate: -50% 0;
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 14px;
+    font-size: 16px;
+    z-index: 60;
+    opacity: 0;
+    transition: opacity .25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: .95; }
+</style>
+</head>
+<body>
+  <h1>🤖 小机器人去充电</h1>
+  <div class="subtitle">用按钮排好命令，让机器人走到 🔋 那里</div>
+
+  <div class="game-wrap">
+    <div class="status-bar">
+      <span>第 <span class="level-name" id="levelNum">1</span> 关</span>
+      <span class="hint" id="goalHint">帮机器人找到电池！</span>
+    </div>
+
+    <div id="board"></div>
+
+    <div class="program" id="program">
+      <span class="placeholder">↑ 点下面的按钮，给机器人下命令</span>
+    </div>
+
+    <div class="controls">
+      <button class="cmd btn-left"   id="btnLeft">   <span class="ico">↰</span>向左转</button>
+      <button class="cmd btn-forward" id="btnForward"><span class="ico">⬆</span>向前走</button>
+      <button class="cmd btn-right"  id="btnRight">  <span class="ico">↱</span>向右转</button>
+    </div>
+
+    <div class="actions">
+      <button class="act btn-undo"  id="btnUndo">↩ 撤回</button>
+      <button class="act btn-clear" id="btnClear">🗑 清空</button>
+      <button class="act btn-run"   id="btnRun">▶ 出发！</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <div class="emoji" id="cardEmoji">🎉</div>
+      <h2 id="cardTitle">太棒啦！</h2>
+      <p id="cardText">机器人充上电了！</p>
+      <button id="cardBtn">下一关 →</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ===== 关卡数据 =====
+   每一关是一张方格地图。
+   dir 方向：0=上, 1=右, 2=下, 3=左
+   walls 是障碍格子（石头），机器人不能走进去。
+*/
+const LEVELS = [
+  { // 第1关：直直走两步（教"向前走"）
+    cols: 4, rows: 4,
+    start: { x: 0, y: 3, dir: 1 },
+    goal:  { x: 3, y: 3 },
+    walls: [],
+    hint: "一直向前走，找到电池！"
+  },
+  { // 第2关：需要一次转弯（教"转弯")
+    cols: 4, rows: 4,
+    start: { x: 0, y: 3, dir: 1 },
+    goal:  { x: 3, y: 0 },
+    walls: [],
+    hint: "先向前，再向左转哦～"
+  },
+  { // 第3关：绕开一块石头
+    cols: 5, rows: 5,
+    start: { x: 0, y: 4, dir: 1 },
+    goal:  { x: 4, y: 4 },
+    walls: [ {x:2,y:4} ],
+    hint: "当心石头，要绕过去！"
+  },
+  { // 第4关：走一个"L"形
+    cols: 5, rows: 5,
+    start: { x: 0, y: 4, dir: 0 },
+    goal:  { x: 4, y: 0 },
+    walls: [ {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3} ],
+    hint: "先往上走到顶，再向右转！"
+  },
+  { // 第5关：S形小迷宫
+    cols: 6, rows: 6,
+    start: { x: 0, y: 5, dir: 0 },
+    goal:  { x: 5, y: 0 },
+    walls: [
+      {x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},
+      {x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5}
+    ],
+    hint: "弯弯绕绕，慢慢想，你一定行！"
+  }
+];
+
+// 方向 -> 机器人朝向的旋转角度（机器人emoji默认朝右）
+const DIR_ROTATE = { 0: -90, 1: 0, 2: 90, 3: 180 };
+const DIR_DELTA  = { 0: {x:0,y:-1}, 1: {x:1,y:0}, 2: {x:0,y:1}, 3: {x:-1,y:0} };
+
+let levelIndex = 0;
+let program = [];        // 当前命令序列，例如 ['forward','left',...]
+let robot = null;        // {x, y, dir}
+let isRunning = false;
+
+const boardEl   = document.getElementById('board');
+const programEl = document.getElementById('program');
+const overlayEl = document.getElementById('overlay');
+const toastEl   = document.getElementById('toast');
+
+function level() { return LEVELS[levelIndex]; }
+
+/* 渲染地图与机器人初始位置 */
+function buildBoard() {
+  const lv = level();
+  boardEl.style.gridTemplateColumns = `repeat(${lv.cols}, 1fr)`;
+  boardEl.style.gridTemplateRows = `repeat(${lv.rows}, 1fr)`;
+  boardEl.innerHTML = '';
+
+  for (let y = 0; y < lv.rows; y++) {
+    for (let x = 0; x < lv.cols; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+      if (lv.walls.some(w => w.x === x && w.y === y)) {
+        cell.classList.add('wall');
+        cell.textContent = '🪨';
+      }
+      if (lv.goal.x === x && lv.goal.y === y) {
+        cell.classList.add('goal');
+        cell.textContent = '🔋';
+      }
+      boardEl.appendChild(cell);
+    }
+  }
+
+  // 机器人
+  robot = { x: lv.start.x, y: lv.start.y, dir: lv.start.dir };
+  const r = document.createElement('div');
+  r.className = 'robot';
+  r.id = 'robot';
+  r.textContent = '🤖';
+  boardEl.appendChild(r);
+  placeRobot(false);
+
+  document.getElementById('levelNum').textContent = levelIndex + 1;
+  document.getElementById('goalHint').textContent = lv.hint;
+}
+
+/* 把机器人div放到格子上 */
+function placeRobot(animate) {
+  const lv = level();
+  const r = document.getElementById('robot');
+  if (!animate) r.style.transition = 'none';
+  // 用百分比定位：每格宽度 = 100/cols %
+  const cellW = 100 / lv.cols;
+  const cellH = 100 / lv.rows;
+  // board 有 12px padding，用 calc 让机器人对齐格子区域
+  r.style.left = `calc(12px + (100% - 24px) * ${robot.x / lv.cols})`;
+  r.style.top  = `calc(12px + (100% - 24px) * ${robot.y / lv.rows})`;
+  r.style.width  = `calc((100% - 24px) / ${lv.cols})`;
+  r.style.height = `calc((100% - 24px) / ${lv.rows})`;
+  r.style.transform = `rotate(${DIR_ROTATE[robot.dir]}deg)`;
+  if (!animate) {
+    // 强制重绘后恢复动画
+    void r.offsetWidth;
+    r.style.transition = '';
+  }
+}
+
+/* 渲染程序条 */
+function renderProgram() {
+  if (program.length === 0) {
+    programEl.innerHTML = '<span class="placeholder">↑ 点下面的按钮，给机器人下命令</span>';
+    return;
+  }
+  programEl.innerHTML = '';
+  program.forEach((cmd, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip cmd-' + cmd;
+    chip.dataset.index = i;
+    chip.textContent = cmd === 'forward' ? '⬆' : (cmd === 'left' ? '↰' : '↱');
+    programEl.appendChild(chip);
+  });
+}
+
+function addCommand(cmd) {
+  if (isRunning) return;
+  if (program.length >= 30) { toast('命令有点太多啦～'); return; }
+  program.push(cmd);
+  renderProgram();
+}
+
+function undo() {
+  if (isRunning) return;
+  program.pop();
+  renderProgram();
+}
+
+function clearProgram() {
+  if (isRunning) return;
+  program = [];
+  renderProgram();
+  buildBoard(); // 机器人回到起点
+}
+
+function setButtonsDisabled(disabled) {
+  document.querySelectorAll('button').forEach(b => {
+    if (b.id !== 'cardBtn') b.disabled = disabled;
+  });
+}
+
+/* 运行程序：一步步执行 */
+async function run() {
+  if (isRunning || program.length === 0) {
+    if (program.length === 0) toast('先给机器人下几个命令吧～');
+    return;
+  }
+  isRunning = true;
+  setButtonsDisabled(true);
+  // 回到起点重新走
+  const lv = level();
+  robot = { x: lv.start.x, y: lv.start.y, dir: lv.start.dir };
+  placeRobot(false);
+  await sleep(300);
+
+  const chips = programEl.querySelectorAll('.chip');
+
+  for (let i = 0; i < program.length; i++) {
+    chips.forEach(c => c.classList.remove('running'));
+    if (chips[i]) chips[i].classList.add('running');
+    const cmd = program[i];
+
+    if (cmd === 'left')  robot.dir = (robot.dir + 3) % 4;
+    if (cmd === 'right') robot.dir = (robot.dir + 1) % 4;
+
+    if (cmd === 'forward') {
+      const d = DIR_DELTA[robot.dir];
+      const nx = robot.x + d.x;
+      const ny = robot.y + d.y;
+      if (!canMoveTo(nx, ny)) {
+        // 撞墙或出界：抖一抖，结束
+        bump();
+        await sleep(500);
+        finishRun(false, '哎呀，撞到啦！', '机器人不能走出地图或撞石头哦，再想想顺序～', '😅', '再试一次');
+        return;
+      }
+      robot.x = nx;
+      robot.y = ny;
+    }
+    placeRobot(true);
+    await sleep(450);
+
+    // 到达终点
+    if (robot.x === lv.goal.x && robot.y === lv.goal.y) {
+      chips.forEach(c => c.classList.remove('running'));
+      cheer();
+      await sleep(700);
+      const isLast = levelIndex === LEVELS.length - 1;
+      finishRun(true,
+        isLast ? '全部通关啦！🏆' : '太棒啦！',
+        isLast ? '你是真正的小小程序员！可以从头再玩，或挑战实体机器人～' : '机器人充上电了！',
+        isLast ? '🏆' : '🎉',
+        isLast ? '再玩一次' : '下一关 →',
+        isLast);
+      return;
+    }
+  }
+
+  // 程序走完但没到终点
+  chips.forEach(c => c.classList.remove('running'));
+  await sleep(200);
+  finishRun(false, '差一点点！', '机器人还没走到电池那里，再加几个命令试试～', '🤔', '再试一次');
+}
+
+function canMoveTo(x, y) {
+  const lv = level();
+  if (x < 0 || y < 0 || x >= lv.cols || y >= lv.rows) return false;
+  if (lv.walls.some(w => w.x === x && w.y === y)) return false;
+  return true;
+}
+
+function finishRun(success, title, text, emoji, btnLabel, isFinalWin) {
+  isRunning = false;
+  setButtonsDisabled(false);
+  document.getElementById('cardEmoji').textContent = emoji;
+  document.getElementById('cardTitle').textContent = title;
+  document.getElementById('cardText').textContent = text;
+  const btn = document.getElementById('cardBtn');
+  btn.textContent = btnLabel;
+  overlayEl.classList.add('show');
+
+  btn.onclick = () => {
+    overlayEl.classList.remove('show');
+    if (success) {
+      if (isFinalWin) { levelIndex = 0; }
+      else { levelIndex++; }
+      program = [];
+      renderProgram();
+      buildBoard();
+    } else {
+      // 失败：保留程序，机器人回起点，方便修改
+      buildBoard();
+    }
+  };
+}
+
+function bump() {
+  const r = document.getElementById('robot');
+  r.classList.add('bump');
+  setTimeout(() => r.classList.remove('bump'), 400);
+}
+function cheer() {
+  const r = document.getElementById('robot');
+  r.classList.add('cheer');
+}
+
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* 绑定按钮 */
+document.getElementById('btnForward').onclick = () => addCommand('forward');
+document.getElementById('btnLeft').onclick    = () => addCommand('left');
+document.getElementById('btnRight').onclick   = () => addCommand('right');
+document.getElementById('btnUndo').onclick    = undo;
+document.getElementById('btnClear').onclick   = clearProgram;
+document.getElementById('btnRun').onclick     = run;
+
+// 窗口尺寸变化时重新摆放机器人
+window.addEventListener('resize', () => placeRobot(false));
+
+// 开始游戏
+buildBoard();
+renderProgram();
+</script>
+</body>
+</html>
