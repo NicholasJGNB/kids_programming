@@ -496,6 +496,7 @@ async function run() {
     if (!canMoveTo(nx, ny)) {
       // 撞墙或出界：抖一抖，结束
       bump();
+      soundBump();
       await sleep(500);
       finishRun(false, '哎呀，撞到啦！', '机器人不能走出地图或撞石头哦，再想想怎么走～', '😅', '再试一次');
       return;
@@ -503,14 +504,16 @@ async function run() {
     robot.x = nx;
     robot.y = ny;
     placeRobot(true);
+    soundStep();
     await sleep(450);
 
     // 到达终点
     if (robot.x === lv.goal.x && robot.y === lv.goal.y) {
       chips.forEach(c => c.classList.remove('running'));
       cheer();
-      await sleep(700);
       const isLast = levelIndex === LEVELS.length - 1;
+      if (isLast) soundCheer(); else soundWin();
+      await sleep(700);
       finishRun(true,
         isLast ? '全部通关啦！🏆' : '太棒啦！',
         isLast ? '你是真正的小小程序员！可以从头再玩，或挑战实体机器人～' : '机器人充上电了！',
@@ -598,11 +601,63 @@ function toast(msg) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+/* ===== 音效（用浏览器自带的 Web Audio 合成，不需要音频文件）===== */
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  // 手机/浏览器要求用户点击后才能出声，这里在需要时唤醒
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+// 播放一个音符：频率 freq(Hz)、时长 dur(秒)、起始延迟 when(秒)、波形 type
+function tone(freq, dur, when = 0, type = 'sine', vol = 0.22) {
+  const ctx = getAudio();
+  if (!ctx) return;
+  const t0 = ctx.currentTime + when;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  // 用淡入淡出包络，避免"啪"的爆音
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(vol, t0 + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.02);
+}
+function soundStep()  { tone(660, 0.12, 0, 'triangle', 0.18); }              // 走一步：清脆"嘀"
+function soundBump()  { tone(150, 0.28, 0, 'sawtooth', 0.25); }             // 撞墙：低沉"咚"
+function soundWin()   {                                                     // 过关：一小段上行旋律
+  [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, i * 0.13, 'triangle', 0.22));
+}
+function soundCheer() {                                                      // 通关：更长更欢快
+  [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, 0.26, i * 0.12, 'triangle', 0.22));
+}
+
+// 手机浏览器要求"用户点击后"才允许出声，第一次触摸时唤醒音频
+function unlockAudio() {
+  getAudio();
+  window.removeEventListener('pointerdown', unlockAudio);
+  window.removeEventListener('touchstart', unlockAudio);
+}
+window.addEventListener('pointerdown', unlockAudio);
+window.addEventListener('touchstart', unlockAudio);
+
+// 点方向键时给个轻轻的"咔"声，让孩子知道命令记下了
+function addCommandWithSound(cmd) {
+  addCommand(cmd);
+  tone(880, 0.06, 0, 'square', 0.12);
+}
+
 /* 绑定按钮 */
-document.getElementById('btnUp').onclick    = () => addCommand('up');
-document.getElementById('btnDown').onclick  = () => addCommand('down');
-document.getElementById('btnLeft').onclick  = () => addCommand('left');
-document.getElementById('btnRight').onclick = () => addCommand('right');
+document.getElementById('btnUp').onclick    = () => addCommandWithSound('up');
+document.getElementById('btnDown').onclick  = () => addCommandWithSound('down');
+document.getElementById('btnLeft').onclick  = () => addCommandWithSound('left');
+document.getElementById('btnRight').onclick = () => addCommandWithSound('right');
 document.getElementById('btnUndo').onclick    = undo;
 document.getElementById('btnClear').onclick   = clearProgram;
 document.getElementById('btnRun').onclick     = run;
