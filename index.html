@@ -113,6 +113,28 @@
     0%,100% { translate: 0 0; }
     50% { translate: 0 -8px; }
   }
+  /* 被撞的石头晃一晃 */
+  .cell.shake { animation: shake .4s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0) rotate(0); }
+    20% { transform: translateX(-4px) rotate(-6deg); }
+    40% { transform: translateX(4px) rotate(6deg); }
+    60% { transform: translateX(-3px) rotate(-4deg); }
+    80% { transform: translateX(3px) rotate(4deg); }
+  }
+  /* 撞击冒出的 💥 */
+  .crash-burst {
+    position: absolute;
+    z-index: 8;
+    font-size: 30px;
+    pointer-events: none;
+    animation: burst .6s ease-out forwards;
+  }
+  @keyframes burst {
+    0%   { transform: scale(.3); opacity: 0; }
+    30%  { transform: scale(1.4); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
 
   /* 程序条 */
   .program {
@@ -494,11 +516,14 @@ async function run() {
     const nx = robot.x + d.x;
     const ny = robot.y + d.y;
     if (!canMoveTo(nx, ny)) {
-      // 撞墙或出界：抖一抖，结束
-      bump();
+      // 撞墙或出界：朝障碍方向冲一下、撞击、再弹回
       soundBump();
-      await sleep(500);
-      finishRun(false, '哎呀，撞到啦！', '机器人不能走出地图或撞石头哦，再想想怎么走～', '😅', '再试一次');
+      await crash(d, nx, ny);
+      const hitRock = level().walls.some(w => w.x === nx && w.y === ny);
+      finishRun(false,
+        hitRock ? '咣！撞到石头啦！' : '哎呀，撞墙啦！',
+        hitRock ? '前面有块大石头 🪨，机器人过不去，要绕开它哦～' : '机器人不能走出地图，再想想怎么走～',
+        '😵', '再试一次');
       return;
     }
     robot.x = nx;
@@ -563,10 +588,47 @@ function finishRun(success, title, text, emoji, btnLabel, isFinalWin) {
   };
 }
 
-function bump() {
+/* 撞击效果：机器人朝障碍方向冲一截再弹回，障碍格晃动并冒 💥 */
+async function crash(dir, tx, ty) {
   const r = document.getElementById('robot');
+  // 机器人朝障碍方向冲出约 40% 一格的距离
+  const push = 0.4;
+  const lungeX = dir.x * r.offsetWidth * push;
+  const lungeY = dir.y * r.offsetHeight * push;
+  r.style.transition = 'translate .12s ease-out';
+  r.style.translate = `${lungeX}px ${lungeY}px`;
+  await sleep(120);
+
+  // 撞上的瞬间：💥 + 石头晃动 + 机器人受惊变大一下
+  showBurst(tx, ty, dir);
+  const rock = boardEl.querySelector(`.cell.wall[data-x="${tx}"][data-y="${ty}"]`);
+  if (rock) { rock.classList.add('shake'); setTimeout(() => rock.classList.remove('shake'), 400); }
   r.classList.add('bump');
-  setTimeout(() => r.classList.remove('bump'), 400);
+
+  // 弹回原位
+  r.style.translate = '0 0';
+  await sleep(380);
+  r.classList.remove('bump');
+  r.style.transition = '';
+  r.style.translate = '';
+}
+
+/* 在格子(或地图边界)位置冒出一个 💥 */
+function showBurst(tx, ty, dir) {
+  const lv = level();
+  // 若目标格在地图内就用该格，否则用机器人当前格作为撞击点
+  const inMap = tx >= 0 && ty >= 0 && tx < lv.cols && ty < lv.rows;
+  const cx = inMap ? tx : robot.x;
+  const cy = inMap ? ty : robot.y;
+  const cell = boardEl.querySelector(`.cell[data-x="${cx}"][data-y="${cy}"]`);
+  if (!cell) return;
+  const b = document.createElement('div');
+  b.className = 'crash-burst';
+  b.textContent = '💥';
+  b.style.left = (cell.offsetLeft + cell.offsetWidth / 2 - 15) + 'px';
+  b.style.top  = (cell.offsetTop  + cell.offsetHeight / 2 - 15) + 'px';
+  boardEl.appendChild(b);
+  setTimeout(() => b.remove(), 650);
 }
 
 /* 撒花特效：从屏幕顶部落下一堆彩色碎纸 */
