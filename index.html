@@ -373,6 +373,66 @@
     0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
     100% { transform: translateY(110vh) rotate(900deg); opacity: 1; }
   }
+  /* 自由搭建模式 */
+  .editor { display: none; flex-direction: column; gap: 10px; }
+  body.editing .editor { display: flex; }
+  body.editing .controls,
+  body.editing .actions,
+  body.editing .program,
+  body.editing .level-toggle { display: none; }
+  .edit-hint { text-align: center; color: #7a89ad; font-size: 14px; }
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  .palette .brush {
+    border: none;
+    background: #fff;
+    border-radius: 14px;
+    padding: 8px 0;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 3px 0 #d3def5;
+  }
+  .palette .brush span { font-size: 12px; color: var(--ink); }
+  .palette .brush.current {
+    background: var(--primary);
+    box-shadow: 0 3px 0 var(--primary-dark);
+  }
+  .palette .brush.current span { color: #fff; }
+  .edit-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1.2fr;
+    gap: 8px;
+  }
+  .btn-edit-size { background: #f0a500; }
+  .btn-edit-clear { background: var(--pink); }
+  .btn-edit-back { background: #9aa6c4; }
+  .btn-edit-play { background: var(--primary); }
+  /* 编辑时格子可点，给点提示态 */
+  body.editing .cell { cursor: pointer; }
+  .cell.startmark { background: #e3fff2; opacity: .85; }
+  .level-build {
+    margin-top: 16px;
+    border: none;
+    background: var(--green);
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 22px;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--green-dark);
+    display: block;
+    width: 100%;
+  }
+  .level-build:active { translate: 0 4px; box-shadow: 0 0 0 var(--green-dark); }
+
   .toast {
     position: fixed;
     bottom: 24px; left: 50%;
@@ -395,7 +455,7 @@
 
   <div class="game-wrap">
     <div class="status-bar">
-      <span>第 <span class="level-name" id="levelNum">1</span> 关</span>
+      <span id="levelLabel">第 <span class="level-name" id="levelNum">1</span> 关</span>
       <span class="hint" id="goalHint">帮机器人找到电池！</span>
       <button class="level-toggle" id="levelToggle">🗺 选关</button>
     </div>
@@ -417,6 +477,24 @@
       <button class="act btn-clear" id="btnClear">🗑 清空</button>
       <button class="act btn-run"   id="btnRun">▶ 出发！</button>
     </div>
+
+    <!-- 自由搭建：调色板 + 按钮（平时隐藏） -->
+    <div class="editor" id="editor">
+      <div class="edit-hint">先点一个工具，再点格子来画 👇</div>
+      <div class="palette" id="palette">
+        <button class="brush current" data-brush="wall">🪨<span>石头</span></button>
+        <button class="brush" data-brush="star">⭐<span>星星</span></button>
+        <button class="brush" data-brush="start">🤖<span>起点</span></button>
+        <button class="brush" data-brush="goal">🔋<span>电池</span></button>
+        <button class="brush" data-brush="erase">🧹<span>擦掉</span></button>
+      </div>
+      <div class="edit-actions">
+        <button class="act btn-edit-size"  id="btnEditSize">📐 换大小</button>
+        <button class="act btn-edit-clear" id="btnEditClear">🗑 清空</button>
+        <button class="act btn-edit-back"  id="btnEditBack">← 返回</button>
+        <button class="act btn-edit-play"  id="btnEditPlay">▶ 开始玩</button>
+      </div>
+    </div>
   </div>
 
   <!-- 选关浮层 -->
@@ -424,6 +502,7 @@
     <div class="card level-card">
       <h2>选择关卡</h2>
       <div class="level-select" id="levelSelect"></div>
+      <button class="level-build" id="levelBuild">🏗 自己造一关</button>
       <button class="level-close" id="levelClose">关闭</button>
     </div>
   </div>
@@ -590,7 +669,7 @@ const MOVE_DELTA = {
 };
 const ARROW = { up: '⬆', down: '⬇', left: '⬅', right: '➡' };
 
-let levelIndex = 0;
+let levelIndex = 0;       // -1 表示正在玩"自己造的关"
 // 命令序列。每一项是方向 'up'/'down'/'left'/'right'，
 // 或一个循环标记 { loop: N } —— 表示"它后面的动作重复 N 次"
 let program = [];
@@ -598,13 +677,16 @@ let robot = null;        // {x, y, dir}
 let isRunning = false;
 let cleared = new Set(); // 已通关的关卡序号（用来显示 ⭐）
 let starsLeft = new Set(); // 本关还没捡到的星星
+let customLevel = null;  // 自己造的关卡数据
+let editing = false;     // 是否在搭建模式
+let editBrush = 'wall';  // 当前画笔
 
 const boardEl   = document.getElementById('board');
 const programEl = document.getElementById('program');
 const overlayEl = document.getElementById('overlay');
 const toastEl   = document.getElementById('toast');
 
-function level() { return LEVELS[levelIndex]; }
+function level() { return levelIndex === -1 ? customLevel : LEVELS[levelIndex]; }
 
 /* 渲染地图与机器人初始位置 */
 function buildBoard() {
@@ -623,7 +705,7 @@ function buildBoard() {
         cell.classList.add('wall');
         cell.textContent = '🪨';
       }
-      if (lv.goal.x === x && lv.goal.y === y) {
+      if (lv.goal && lv.goal.x === x && lv.goal.y === y) {
         cell.classList.add('goal');
         cell.textContent = '🔋';
       }
@@ -632,6 +714,11 @@ function buildBoard() {
         cell.dataset.star = '1';
         cell.textContent = '⭐';
       }
+      // 编辑模式下，起点格显示一个淡淡的🤖标记
+      if (editing && lv.start && lv.start.x === x && lv.start.y === y && !(lv.goal && lv.goal.x===x && lv.goal.y===y)) {
+        cell.classList.add('startmark');
+        cell.textContent = '🤖';
+      }
       boardEl.appendChild(cell);
     }
   }
@@ -639,17 +726,27 @@ function buildBoard() {
   // 这一关还没捡到的星星（坐标字符串集合）
   starsLeft = new Set((lv.stars || []).map(s => s.x + ',' + s.y));
 
-  // 机器人
-  robot = { x: lv.start.x, y: lv.start.y };
-  const r = document.createElement('div');
-  r.className = 'robot';
-  r.id = 'robot';
-  r.textContent = '🤖';
-  boardEl.appendChild(r);
-  placeRobot(false);
+  // 机器人（编辑模式下若还没放起点，就先不显示机器人）
+  if (lv.start) {
+    robot = { x: lv.start.x, y: lv.start.y };
+    const r = document.createElement('div');
+    r.className = 'robot';
+    r.id = 'robot';
+    r.textContent = '🤖';
+    boardEl.appendChild(r);
+    placeRobot(false);
+  } else {
+    robot = null;
+  }
 
-  document.getElementById('levelNum').textContent = levelIndex + 1;
-  document.getElementById('goalHint').textContent = lv.hint;
+  // 状态栏文字
+  const label = document.getElementById('levelLabel');
+  if (levelIndex === -1) {
+    label.textContent = editing ? '🏗 搭建中' : '🏗 自由关';
+  } else {
+    label.innerHTML = '第 <span class="level-name">' + (levelIndex + 1) + '</span> 关';
+  }
+  document.getElementById('goalHint').textContent = lv.hint || '';
   renderLevelSelect();
 }
 
@@ -687,6 +784,146 @@ function openLevelPicker() {
 }
 function closeLevelPicker() {
   document.getElementById('levelOverlay').classList.remove('show');
+}
+
+/* ===== 自由搭建模式 ===== */
+function startEditor() {
+  if (isRunning) return;
+  closeLevelPicker();
+  editing = true;
+  levelIndex = -1;
+  document.body.classList.add('editing');
+  // 新建一张空白 6x6 地图，先放好起点和电池
+  customLevel = {
+    cols: 6, rows: 6,
+    start: { x: 0, y: 5 },
+    goal:  { x: 5, y: 0 },
+    walls: [],
+    stars: [],
+    hint: ''
+  };
+  program = [];
+  renderProgram();
+  buildBoard();
+}
+
+/* 在编辑模式点格子：根据当前画笔修改地图 */
+function editCellAt(x, y) {
+  const lv = customLevel;
+  const isStart = lv.start && lv.start.x === x && lv.start.y === y;
+  const isGoal  = lv.goal  && lv.goal.x === x && lv.goal.y === y;
+  const wallIdx = lv.walls.findIndex(w => w.x === x && w.y === y);
+  const starIdx = lv.stars.findIndex(s => s.x === x && s.y === y);
+
+  const removeAll = () => {
+    if (wallIdx >= 0) lv.walls.splice(wallIdx, 1);
+    if (starIdx >= 0) lv.stars.splice(starIdx, 1);
+  };
+
+  switch (editBrush) {
+    case 'wall':
+      if (isStart || isGoal) { toast('这里是起点或电池哦'); return; }
+      if (wallIdx >= 0) { lv.walls.splice(wallIdx, 1); }   // 再点一次擦掉
+      else { if (starIdx >= 0) lv.stars.splice(starIdx, 1); lv.walls.push({ x, y }); }
+      break;
+    case 'star':
+      if (isStart || isGoal) { toast('这里是起点或电池哦'); return; }
+      if (starIdx >= 0) { lv.stars.splice(starIdx, 1); }
+      else { if (wallIdx >= 0) lv.walls.splice(wallIdx, 1); lv.stars.push({ x, y }); }
+      break;
+    case 'start':
+      if (isGoal) { toast('这里已经是电池啦'); return; }
+      removeAll();
+      lv.start = { x, y };
+      break;
+    case 'goal':
+      if (isStart) { toast('这里已经是起点啦'); return; }
+      removeAll();
+      lv.goal = { x, y };
+      break;
+    case 'erase':
+      if (isStart || isGoal) { toast('起点和电池不能擦掉，换个位置放就行'); return; }
+      removeAll();
+      break;
+  }
+  tone(700, 0.05, 0, 'square', 0.1);
+  buildBoard();
+}
+
+/* 选画笔 */
+function selectBrush(b) {
+  editBrush = b;
+  document.querySelectorAll('.palette .brush').forEach(el => {
+    el.classList.toggle('current', el.dataset.brush === b);
+  });
+}
+
+/* 换地图大小（在 5/6/7/8 之间循环） */
+function cycleEditSize() {
+  const sizes = [5, 6, 7, 8];
+  const cur = customLevel.cols;
+  const next = sizes[(sizes.indexOf(cur) + 1) % sizes.length];
+  customLevel.cols = next;
+  customLevel.rows = next;
+  // 把超出新边界的东西清掉
+  const inb = (p) => p.x < next && p.y < next;
+  customLevel.walls = customLevel.walls.filter(inb);
+  customLevel.stars = customLevel.stars.filter(inb);
+  if (!inb(customLevel.start)) customLevel.start = { x: 0, y: next - 1 };
+  if (!inb(customLevel.goal))  customLevel.goal  = { x: next - 1, y: 0 };
+  toast('地图变成 ' + next + '×' + next);
+  buildBoard();
+}
+
+/* 清空当前搭建（保留起点电池） */
+function clearEditor() {
+  customLevel.walls = [];
+  customLevel.stars = [];
+  buildBoard();
+}
+
+/* 校验自己造的关能不能走通（BFS） */
+function validateCustom() {
+  const lv = customLevel;
+  if (!lv.start || !lv.goal) return '要有一个起点🤖和一个电池🔋哦';
+  const wall = new Set(lv.walls.map(w => w.x + ',' + w.y));
+  const free = (x, y) => x >= 0 && y >= 0 && x < lv.cols && y < lv.rows && !wall.has(x + ',' + y);
+  const seen = new Set([lv.start.x + ',' + lv.start.y]);
+  const q = [[lv.start.x, lv.start.y]];
+  while (q.length) {
+    const [x, y] = q.shift();
+    [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy]) => {
+      const nx = x+dx, ny = y+dy, k = nx+','+ny;
+      if (free(nx, ny) && !seen.has(k)) { seen.add(k); q.push([nx, ny]); }
+    });
+  }
+  if (!seen.has(lv.goal.x + ',' + lv.goal.y)) return '机器人走不到电池，挪挪石头试试～';
+  for (const s of lv.stars) {
+    if (!seen.has(s.x + ',' + s.y)) return '有颗⭐被石头围住了，机器人拿不到哦';
+  }
+  return null; // 没问题
+}
+
+/* 从搭建切换到试玩 */
+function playCustom() {
+  const err = validateCustom();
+  if (err) { toast(err); return; }
+  editing = false;
+  document.body.classList.remove('editing');
+  customLevel.hint = '你自己造的关，加油！';
+  program = [];
+  renderProgram();
+  buildBoard();
+}
+
+/* 退出搭建，回到第1关 */
+function exitEditor() {
+  editing = false;
+  document.body.classList.remove('editing');
+  levelIndex = 0;
+  program = [];
+  renderProgram();
+  buildBoard();
 }
 
 /* 机器人当前格子若有星星，就把它收集掉 */
@@ -895,8 +1132,15 @@ async function run() {
         return;
       }
       clearRunHighlight();
-      cleared.add(levelIndex);  // 记下这一关已通关，显示 ⭐
       cheer();
+      if (levelIndex === -1) {
+        // 自己造的关：通关
+        soundWin();
+        await sleep(700);
+        finishRun(true, '通关啦！🎉', '你自己造的关也能通关，真厉害！', '🎉', '再玩一次');
+        return;
+      }
+      cleared.add(levelIndex);  // 记下这一关已通关，显示 ⭐
       const isLast = levelIndex === LEVELS.length - 1;
       if (isLast) soundCheer(); else soundWin();
       await sleep(700);
@@ -937,7 +1181,9 @@ function finishRun(success, title, text, emoji, btnLabel, isFinalWin) {
   btn.onclick = () => {
     overlayEl.classList.remove('show');
     if (success) {
-      if (isFinalWin) { levelIndex = 0; }
+      if (levelIndex === -1) {
+        // 自己造的关：留在原关，清空命令重玩
+      } else if (isFinalWin) { levelIndex = 0; }
       else { levelIndex++; }
       program = [];
       renderProgram();
@@ -1100,8 +1346,27 @@ document.getElementById('levelOverlay').onclick = (e) => {
   if (e.target.id === 'levelOverlay') closeLevelPicker();
 };
 
+// 自由搭建相关按钮
+document.getElementById('levelBuild').onclick   = startEditor;
+document.getElementById('btnEditSize').onclick  = cycleEditSize;
+document.getElementById('btnEditClear').onclick = clearEditor;
+document.getElementById('btnEditBack').onclick  = exitEditor;
+document.getElementById('btnEditPlay').onclick  = playCustom;
+// 选画笔
+document.getElementById('palette').addEventListener('click', (e) => {
+  const b = e.target.closest('.brush');
+  if (b) selectBrush(b.dataset.brush);
+});
+// 编辑模式下点格子作画
+boardEl.addEventListener('click', (e) => {
+  if (!editing) return;
+  const cell = e.target.closest('.cell');
+  if (!cell) return;
+  editCellAt(parseInt(cell.dataset.x, 10), parseInt(cell.dataset.y, 10));
+});
+
 // 窗口尺寸变化时重新摆放机器人
-window.addEventListener('resize', () => placeRobot(false));
+window.addEventListener('resize', () => { if (robot) placeRobot(false); });
 
 // 开始游戏
 buildBoard();
