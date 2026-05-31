@@ -211,7 +211,7 @@
     100% { transform: scale(1.7); opacity: 0; }
   }
 
-  /* 程序条 */
+  /* 程序条：固定单行，命令多了左右滑动查看 */
   .program {
     background: var(--panel);
     border-radius: 16px;
@@ -219,10 +219,17 @@
     box-shadow: 0 4px 14px rgba(91,141,239,.12);
     min-height: 58px;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
-    align-content: flex-start;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
+  .program::-webkit-scrollbar { height: 5px; }
+  .program::-webkit-scrollbar-thumb { background: #cfd9f0; border-radius: 3px; }
+  .program .chip { flex: 0 0 auto; }
   .chip {
     width: 42px; height: 42px;
     border-radius: 12px;
@@ -706,11 +713,13 @@ function renderProgram() {
     chip.textContent = ARROW[cmd];
     programEl.appendChild(chip);
   });
+  // 命令多时自动滑到最右，露出刚加的命令
+  programEl.scrollLeft = programEl.scrollWidth;
 }
 
 function addCommand(cmd) {
   if (isRunning) return;
-  if (program.length >= 30) { toast('命令有点太多啦～'); return; }
+  if (program.length >= 60) { toast('命令有点太多啦～'); return; }
   program.push(cmd);
   renderProgram();
 }
@@ -751,7 +760,11 @@ async function run() {
 
   for (let i = 0; i < program.length; i++) {
     chips.forEach(c => c.classList.remove('running'));
-    if (chips[i]) chips[i].classList.add('running');
+    if (chips[i]) {
+      chips[i].classList.add('running');
+      // 只在命令条内部横向滚动，让当前命令居中可见（不动整个页面）
+      programEl.scrollLeft = chips[i].offsetLeft - programEl.clientWidth / 2 + chips[i].offsetWidth / 2;
+    }
     const cmd = program[i];
 
     const d = MOVE_DELTA[cmd];
