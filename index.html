@@ -644,13 +644,13 @@ const LEVELS = [
     stars: [ {x:5,y:5},{x:5,y:0} ],
     hint: "先去右边捡两个宝贝，再绕回来！"
   },
-  { // 11 梳子形
-    cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:5},
+  { // 11 蛇形迷宫（比第10关更绕一点）
+    cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:0},
     walls: [
-      {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3},
-      {x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5}
+      {x:1,y:2},{x:2,y:2},{x:3,y:2},{x:4,y:2},{x:5,y:2},
+      {x:0,y:4},{x:1,y:4},{x:2,y:4},{x:4,y:4},{x:5,y:4}
     ],
-    hint: "上上下下绕过两排栅栏！"
+    hint: "左右来回穿过两道墙，绕到顶上！"
   },
   { // 12 三颗星星
     cols: 6, rows: 6, start: {x:0,y:5}, goal: {x:5,y:0},
@@ -659,15 +659,14 @@ const LEVELS = [
     hint: "三个宝贝都要捡到哦，动动脑筋！"
   },
 
-  // —— 第四组：大迷宫挑战（7x7）——
-  { // 13 走进中心的小屋（底部留门）
-    cols: 7, rows: 7, start: {x:0,y:6}, goal: {x:3,y:3},
+  // —— 第四组：大迷宫挑战（7×7、8×8），步数越来越长 ——
+  { // 13 横向蛇形迷宫（两道墙）
+    cols: 7, rows: 7, start: {x:0,y:6}, goal: {x:6,y:0},
     walls: [
-      {x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},
-      {x:1,y:2},{x:5,y:2},{x:1,y:3},{x:5,y:3},{x:1,y:4},{x:5,y:4},
-      {x:1,y:5},{x:2,y:5},{x:4,y:5},{x:5,y:5}
+      {x:1,y:2},{x:2,y:2},{x:3,y:2},{x:4,y:2},{x:5,y:2},{x:6,y:2},
+      {x:0,y:4},{x:1,y:4},{x:2,y:4},{x:3,y:4},{x:4,y:4},{x:6,y:4}
     ],
-    hint: "小屋只有一个门，从下面钻进去！"
+    hint: "像走蛇形一样，左右来回穿过去！"
   },
   { // 14 迷宫A
     cols: 7, rows: 7, start: {x:0,y:6}, goal: {x:6,y:0},
@@ -688,36 +687,34 @@ const LEVELS = [
     stars: [ {x:0,y:0},{x:6,y:0} ],
     hint: "上去捡两个宝贝，再下来充电！"
   },
-  { // 16 迷宫C
-    cols: 7, rows: 7, start: {x:0,y:0}, goal: {x:6,y:6},
+  { // 16 横向蛇形迷宫（三道墙，更长）
+    cols: 7, rows: 7, start: {x:0,y:6}, goal: {x:6,y:0},
     walls: [
-      {x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},
-      {x:5,y:2},{x:5,y:3},{x:5,y:4},
-      {x:1,y:3},{x:1,y:4},{x:1,y:5},{x:2,y:5},{x:3,y:5}
+      {x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},
+      {x:1,y:3},{x:2,y:3},{x:3,y:3},{x:4,y:3},{x:5,y:3},{x:6,y:3},
+      {x:0,y:5},{x:1,y:5},{x:2,y:5},{x:3,y:5},{x:4,y:5},{x:5,y:5}
     ],
-    hint: "从左上到右下，绕过弯弯的墙！"
+    hint: "三道墙的蛇形迷宫，弯弯绕绕到顶上！"
   },
 
   // —— 终极挑战（8x8）——
-  { // 17 大迷宫
+  { // 17 大迷宫（8×8 蛇形，更长）
     cols: 8, rows: 8, start: {x:0,y:7}, goal: {x:7,y:0},
     walls: [
-      {x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},{x:1,y:5},{x:1,y:6},
-      {x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5},
-      {x:5,y:2},{x:5,y:3},{x:5,y:4},{x:5,y:5},{x:5,y:6},{x:5,y:7},
-      {x:7,y:2},{x:7,y:3},{x:7,y:4}
+      {x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},{x:6,y:1},
+      {x:1,y:3},{x:2,y:3},{x:3,y:3},{x:4,y:3},{x:5,y:3},{x:6,y:3},{x:7,y:3},
+      {x:0,y:5},{x:1,y:5},{x:2,y:5},{x:3,y:5},{x:4,y:5},{x:5,y:5},{x:6,y:5}
     ],
-    hint: "好大的迷宫！别着急，一步一步来。"
+    hint: "好大的迷宫！别着急，跟着蛇形一步一步来。"
   },
-  { // 18 终极：大迷宫 + 三颗星
-    cols: 8, rows: 8, start: {x:0,y:7}, goal: {x:7,y:7},
+  { // 18 终极：8×8 蛇形大迷宫 + 三个宝贝
+    cols: 8, rows: 8, start: {x:0,y:7}, goal: {x:7,y:0},
     walls: [
-      {x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4},{x:1,y:5},
-      {x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5},{x:3,y:6},{x:3,y:7},
-      {x:5,y:1},{x:5,y:2},{x:5,y:3},{x:5,y:4},{x:5,y:5},
-      {x:6,y:5},{x:7,y:5}
+      {x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},{x:6,y:1},
+      {x:1,y:3},{x:2,y:3},{x:3,y:3},{x:4,y:3},{x:5,y:3},{x:6,y:3},{x:7,y:3},
+      {x:0,y:5},{x:1,y:5},{x:2,y:5},{x:3,y:5},{x:4,y:5},{x:5,y:5},{x:6,y:5}
     ],
-    stars: [ {x:0,y:0},{x:4,y:0},{x:7,y:0} ],
+    stars: [ {x:7,y:6},{x:0,y:2},{x:0,y:0} ],
     hint: "最后一关！捡齐三个宝贝再去充电，你就是编程小高手！"
   }
 ];
@@ -731,13 +728,20 @@ const MOVE_DELTA = {
 };
 const ARROW = { up: '⬆', down: '⬇', left: '⬅', right: '➡' };
 
-// 障碍物和奖励的"皮肤"——同一格固定、不同格丰富变化，让画面更有趣
+// 障碍物和奖励的"皮肤"——每关固定挑选最多2种，关内只在这2种里变化，丰富又不乱
 const WALL_EMOJIS   = ['🪨','💩','🌵','🔥','🧱','🌳','🚧','🦔'];
 const REWARD_EMOJIS = ['⭐','💎','🍎','🍓','🎁','🍪','🍰','🍭','🍌','🏆'];
-// 用坐标算一个稳定的"随机"序号，保证同一关同一格图案不变
-function pickEmoji(list, x, y) {
-  const seed = (levelIndex + 7) * 131 + x * 17 + y * 31;
-  return list[seed % list.length];
+// 根据关卡序号，固定取出这一关要用的两种皮肤
+function levelSkins(list, salt) {
+  const n = levelIndex + salt;
+  const a = list[n % list.length];
+  const b = list[(n * 7 + 3) % list.length];
+  return a === b ? [a] : [a, b];   // 万一撞上同一个，就只用一种
+}
+// 关内：按坐标在这一关的两种皮肤里固定选一个（同格不变、相邻可不同）
+function pickEmoji(list, x, y, salt) {
+  const skins = levelSkins(list, salt);
+  return skins[(x + y) % skins.length];
 }
 
 let levelIndex = 0;       // -1 表示正在玩"自己造的关"
@@ -774,7 +778,7 @@ function buildBoard() {
       cell.dataset.y = y;
       if (lv.walls.some(w => w.x === x && w.y === y)) {
         cell.classList.add('wall');
-        cell.textContent = pickEmoji(WALL_EMOJIS, x, y);
+        cell.textContent = pickEmoji(WALL_EMOJIS, x, y, 0);
       }
       if (lv.goal && lv.goal.x === x && lv.goal.y === y) {
         cell.classList.add('goal');
@@ -783,7 +787,7 @@ function buildBoard() {
       if ((lv.stars || []).some(s => s.x === x && s.y === y)) {
         cell.classList.add('star');
         cell.dataset.star = '1';
-        cell.textContent = pickEmoji(REWARD_EMOJIS, x, y);
+        cell.textContent = pickEmoji(REWARD_EMOJIS, x, y, 4);
       }
       // 编辑模式下，起点格显示一个淡淡的🤖标记
       if (editing && lv.start && lv.start.x === x && lv.start.y === y && !(lv.goal && lv.goal.x===x && lv.goal.y===y)) {
