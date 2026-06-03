@@ -54,3 +54,11 @@ window.addEventListener('resize', () => { if (robot) placeRobot(false); });
 // 开始游戏
 buildBoard();
 renderProgram();
+
+// 注册 Service Worker（让游戏可装到桌面、离线可玩）。
+// 仅在 https 或 localhost 下生效；file:// 直接打开会跳过，不影响游玩。
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* 离线功能不可用也无妨 */ });
+  });
+}

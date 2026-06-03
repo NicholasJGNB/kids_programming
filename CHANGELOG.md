@@ -11,6 +11,8 @@
 - 开源工程化：MIT 许可证、`.gitignore`、面向开发者的 README、贡献指南、变更日志
 - 自动化测试与 GitHub Actions 持续集成
 - 代码模块化拆分（HTML / CSS / JS 分离）
+- **PWA 支持**：可"添加到主屏幕"像 App 一样全屏打开，并支持离线游玩
+  （manifest.json + service worker + 程序化生成的机器人图标）
 
 ## [1.0.0] - 2026-06
 
