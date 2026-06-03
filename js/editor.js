@@ -41,27 +41,27 @@ function editCellAt(x, y) {
 
   switch (editBrush) {
     case 'wall':
-      if (isStart || isGoal) { toast('这里是起点或电池哦'); return; }
+      if (isStart || isGoal) { toast(t('edit.isStartOrGoal')); return; }
       if (wallIdx >= 0) { lv.walls.splice(wallIdx, 1); }   // 再点一次擦掉
       else { if (starIdx >= 0) lv.stars.splice(starIdx, 1); lv.walls.push({ x, y }); }
       break;
     case 'star':
-      if (isStart || isGoal) { toast('这里是起点或电池哦'); return; }
+      if (isStart || isGoal) { toast(t('edit.isStartOrGoal')); return; }
       if (starIdx >= 0) { lv.stars.splice(starIdx, 1); }
       else { if (wallIdx >= 0) lv.walls.splice(wallIdx, 1); lv.stars.push({ x, y }); }
       break;
     case 'start':
-      if (isGoal) { toast('这里已经是电池啦'); return; }
+      if (isGoal) { toast(t('edit.alreadyGoal')); return; }
       removeAll();
       lv.start = { x, y };
       break;
     case 'goal':
-      if (isStart) { toast('这里已经是起点啦'); return; }
+      if (isStart) { toast(t('edit.alreadyStart')); return; }
       removeAll();
       lv.goal = { x, y };
       break;
     case 'erase':
-      if (isStart || isGoal) { toast('起点和电池不能擦掉，换个位置放就行'); return; }
+      if (isStart || isGoal) { toast(t('edit.cantEraseSG')); return; }
       removeAll();
       break;
   }
@@ -90,7 +90,7 @@ function cycleEditSize() {
   customLevel.stars = customLevel.stars.filter(inb);
   if (!inb(customLevel.start)) customLevel.start = { x: 0, y: next - 1 };
   if (!inb(customLevel.goal))  customLevel.goal  = { x: next - 1, y: 0 };
-  toast('地图变成 ' + next + '×' + next);
+  toast(t('edit.resized', { n: next }));
   buildBoard();
 }
 
@@ -104,7 +104,7 @@ function clearEditor() {
 /* 校验自己造的关能不能走通（BFS） */
 function validateCustom() {
   const lv = customLevel;
-  if (!lv.start || !lv.goal) return '要有一个起点🤖和一个电池🔋哦';
+  if (!lv.start || !lv.goal) return t('edit.needStartGoal');
   const wall = new Set(lv.walls.map(w => w.x + ',' + w.y));
   const free = (x, y) => x >= 0 && y >= 0 && x < lv.cols && y < lv.rows && !wall.has(x + ',' + y);
   const seen = new Set([lv.start.x + ',' + lv.start.y]);
@@ -116,9 +116,9 @@ function validateCustom() {
       if (free(nx, ny) && !seen.has(k)) { seen.add(k); q.push([nx, ny]); }
     });
   }
-  if (!seen.has(lv.goal.x + ',' + lv.goal.y)) return '机器人走不到电池，挪挪石头试试～';
+  if (!seen.has(lv.goal.x + ',' + lv.goal.y)) return t('edit.noReach');
   for (const s of lv.stars) {
-    if (!seen.has(s.x + ',' + s.y)) return '有个宝贝被障碍围住了，机器人拿不到哦';
+    if (!seen.has(s.x + ',' + s.y)) return t('edit.starTrapped');
   }
   return null; // 没问题
 }
@@ -129,7 +129,7 @@ function playCustom() {
   if (err) { toast(err); return; }
   editing = false;
   document.body.classList.remove('editing');
-  customLevel.hint = '你自己造的关，加油！';
+  customLevel.hintKey = 'edit.customHint';
   program = [];
   renderProgram();
   buildBoard();

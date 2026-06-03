@@ -73,6 +73,21 @@ h1 {
 }
 .level-toggle:active { translate: 0 3px; box-shadow: 0 0 0 var(--primary-dark); }
 
+/* 语言切换小按钮 */
+.lang-toggle {
+  border: 2px solid var(--primary);
+  background: #fff;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+.lang-toggle:active { translate: 0 2px; }
+body.editing .lang-toggle { display: none; }
+
 /* 选关浮层里的网格 */
 .level-card { max-width: 340px; }
 .level-card h2 { margin: 2px 0 16px; font-size: 20px; color: var(--ink); }

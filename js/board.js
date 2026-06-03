@@ -61,11 +61,18 @@ function buildBoard() {
   // 状态栏文字
   const label = document.getElementById('levelLabel');
   if (levelIndex === -1) {
-    label.textContent = editing ? '🏗 搭建中' : '🏗 自由关';
+    label.textContent = editing ? t('label.buildEdit') : t('label.buildPlay');
   } else {
-    label.innerHTML = '第 <span class="level-name">' + (levelIndex + 1) + '</span> 关';
+    label.textContent = t('label.level', { n: levelIndex + 1 });
   }
-  document.getElementById('goalHint').textContent = lv.hint || '';
+  // 关卡提示：内置关用 hint.N，自由关用 customLevel.hintKey
+  let hintText = '';
+  if (levelIndex === -1) {
+    hintText = customLevel && customLevel.hintKey ? t(customLevel.hintKey) : '';
+  } else {
+    hintText = t('hint.' + (levelIndex + 1));
+  }
+  document.getElementById('goalHint').textContent = hintText;
   renderLevelSelect();
 }
 

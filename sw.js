@@ -4,12 +4,13 @@
  *
  * 改了游戏文件后，把下面的 CACHE 版本号 +1，用户下次联网打开就会拿到新版。
  */
-const CACHE = "robot-game-v1";
+const CACHE = "robot-game-v2";
 
 const ASSETS = [
   "./",
   "./index.html",
   "./css/style.css",
+  "./js/i18n.js",
   "./js/levels.js",
   "./js/state.js",
   "./js/board.js",

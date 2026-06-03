@@ -93,7 +93,7 @@ function renderProgram() {
       if (item.open && item.body.length === 0) {
         const ph = document.createElement('span');
         ph.className = 'loop-ph';
-        ph.textContent = '把动作放进来…';
+        ph.textContent = t('loop.placeholder');
         body.appendChild(ph);
       }
       box.appendChild(body);
@@ -122,7 +122,7 @@ function addLoop() {
     openLoop = null;
     tone(560, 0.08, 0, 'square', 0.12);
   } else {
-    if (totalCount() >= 60) { toast('命令有点太多啦～'); return; }
+    if (totalCount() >= 60) { toast(t('toast.tooMany')); return; }
     openLoop = { loop: 2, body: [], open: true };
     program.push(openLoop);
     tone(740, 0.07, 0, 'square', 0.12);
@@ -134,7 +134,7 @@ function addLoop() {
 /* 循环按钮文字随状态变化 */
 function updateLoopBtn() {
   const b = document.getElementById('btnLoop');
-  if (b) b.textContent = openLoop ? '✓ 结束圈' : '🔁 重复';
+  if (b) b.textContent = openLoop ? t('btn.loopEnd') : t('btn.loop');
 }
 
 /* 调整循环次数（2~9） */
@@ -150,7 +150,7 @@ function changeLoop(i, delta) {
 /* 加方向命令：圈开着就放进圈里，否则放到外面 */
 function addCommand(cmd) {
   if (isRunning) return;
-  if (totalCount() >= 60) { toast('命令有点太多啦～'); return; }
+  if (totalCount() >= 60) { toast(t('toast.tooMany')); return; }
   if (openLoop) openLoop.body.push(cmd);
   else program.push(cmd);
   renderProgram();
@@ -221,7 +221,7 @@ async function run() {
   }
   const steps = flattenProgram();
   if (steps.length === 0) {
-    toast('先给机器人下几个走路命令吧～');
+    toast(t('toast.needCmd'));
     return;
   }
   isRunning = true;
@@ -251,9 +251,9 @@ async function run() {
       await crash(d, nx, ny);
       const hitRock = level().walls.some(w => w.x === nx && w.y === ny);
       finishRun(false,
-        hitRock ? '咣！撞到障碍啦！' : '哎呀，撞墙啦！',
-        hitRock ? '前面有障碍挡路，机器人过不去，要绕开它哦～' : '机器人不能走出地图，再想想怎么走～',
-        '😵', '再试一次');
+        hitRock ? t('run.hitWallTitle') : t('run.hitEdgeTitle'),
+        hitRock ? t('run.hitWallTextRock') : t('run.hitEdgeText'),
+        '😵', t('run.retry'));
       return;
     }
     robot.x = nx;
@@ -270,9 +270,9 @@ async function run() {
       if (starsLeft.size > 0) {
         clearRunHighlight();
         await sleep(200);
-        finishRun(false, '还差宝贝！',
-          `还有 ${starsLeft.size} 个宝贝没捡到呢，先把它们都收集齐再来充电～`,
-          '🤔', '再试一次');
+        finishRun(false, t('run.needStarsTitle'),
+          t('run.needStarsText', { n: starsLeft.size }),
+          '🤔', t('run.retry'));
         return;
       }
       clearRunHighlight();
@@ -281,7 +281,7 @@ async function run() {
         // 自己造的关：通关
         soundWin();
         await sleep(700);
-        finishRun(true, '通关啦！🎉', '你自己造的关也能通关，真厉害！', '🎉', '再玩一次');
+        finishRun(true, t('run.customWinTitle'), t('run.customWinText'), '🎉', t('run.replay'));
         return;
       }
       cleared.add(levelIndex);  // 记下这一关已通关，显示 ⭐
@@ -289,10 +289,10 @@ async function run() {
       if (isLast) soundCheer(); else soundWin();
       await sleep(700);
       finishRun(true,
-        isLast ? '全部通关啦！🏆' : '太棒啦！',
-        isLast ? '你是真正的小小程序员！可以从头再玩，或挑战实体机器人～' : '机器人充上电了！',
+        isLast ? t('run.allClearTitle') : t('card.win.title'),
+        isLast ? t('run.allClearText') : t('card.win.text'),
         isLast ? '🏆' : '🎉',
-        isLast ? '再玩一次' : '下一关 →',
+        isLast ? t('run.replay') : t('card.next'),
         isLast);
       return;
     }
@@ -301,7 +301,7 @@ async function run() {
   // 程序走完但没到终点
   clearRunHighlight();
   await sleep(200);
-  finishRun(false, '差一点点！', '机器人还没走到电池那里，再加几个命令试试～', '🤔', '再试一次');
+  finishRun(false, t('run.notReachTitle'), t('run.notReachText'), '🤔', t('run.retry'));
 }
 
 function canMoveTo(x, y) {

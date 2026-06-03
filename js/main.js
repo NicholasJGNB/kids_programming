@@ -51,7 +51,20 @@ boardEl.addEventListener('click', (e) => {
 // 窗口尺寸变化时重新摆放机器人
 window.addEventListener('resize', () => { if (robot) placeRobot(false); });
 
+// 语言切换：中 ⇄ EN
+document.getElementById('langToggle').onclick = () => {
+  setLang(getLang() === 'zh' ? 'en' : 'zh');
+};
+
+// 语言切换后，重绘需要动态文案的部分（状态栏标签、关卡提示、命令条占位、循环按钮）
+function refreshDynamicI18n() {
+  buildBoard();        // 重绘状态栏标签 + 关卡提示
+  renderProgram();     // 命令条里的占位文字
+  updateLoopBtn();     // 🔁/结束圈 按钮文案
+}
+
 // 开始游戏
+applyI18n();           // 先按当前语言把静态文案刷一遍
 buildBoard();
 renderProgram();
 

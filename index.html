@@ -15,13 +15,14 @@
   <meta name="apple-mobile-web-app-title" content="小机器人">
 </head>
 <body>
-  <h1>🤖 小机器人去充电</h1>
+  <h1 data-i18n="app.h1">🤖 小机器人去充电</h1>
 
   <div class="game-wrap">
     <div class="status-bar">
       <span id="levelLabel">第 <span class="level-name" id="levelNum">1</span> 关</span>
-      <span class="hint" id="goalHint">帮机器人找到电池！</span>
-      <button class="level-toggle" id="levelToggle">🗺 选关</button>
+      <span class="hint" id="goalHint" data-i18n="status.goalHint">帮机器人找到电池！</span>
+      <button class="level-toggle" id="levelToggle" data-i18n="btn.levelSelect">🗺 选关</button>
+      <button class="lang-toggle" id="langToggle" data-i18n="btn.lang">EN</button>
     </div>
 
     <div class="main">
@@ -31,34 +32,34 @@
         <div class="program" id="program"></div>
 
         <div class="controls">
-          <button class="cmd btn-up"    id="btnUp"><span class="ico">⬆</span>上</button>
-          <button class="cmd btn-down"  id="btnDown"><span class="ico">⬇</span>下</button>
-          <button class="cmd btn-left"  id="btnLeft"><span class="ico">⬅</span>左</button>
-          <button class="cmd btn-right" id="btnRight"><span class="ico">➡</span>右</button>
+          <button class="cmd btn-up"    id="btnUp"><span class="ico">⬆</span><span data-i18n="btn.up">上</span></button>
+          <button class="cmd btn-down"  id="btnDown"><span class="ico">⬇</span><span data-i18n="btn.down">下</span></button>
+          <button class="cmd btn-left"  id="btnLeft"><span class="ico">⬅</span><span data-i18n="btn.left">左</span></button>
+          <button class="cmd btn-right" id="btnRight"><span class="ico">➡</span><span data-i18n="btn.right">右</span></button>
         </div>
 
         <div class="actions">
-          <button class="act btn-loop"  id="btnLoop">🔁 重复</button>
-          <button class="act btn-undo"  id="btnUndo">↩ 撤回</button>
-          <button class="act btn-clear" id="btnClear">🗑 清空</button>
-          <button class="act btn-run"   id="btnRun">▶ 出发！</button>
+          <button class="act btn-loop"  id="btnLoop" data-i18n="btn.loop">🔁 重复</button>
+          <button class="act btn-undo"  id="btnUndo" data-i18n="btn.undo">↩ 撤回</button>
+          <button class="act btn-clear" id="btnClear" data-i18n="btn.clear">🗑 清空</button>
+          <button class="act btn-run"   id="btnRun" data-i18n="btn.run">▶ 出发！</button>
         </div>
 
         <!-- 自由搭建：调色板 + 按钮（平时隐藏） -->
         <div class="editor" id="editor">
-          <div class="edit-hint">先点一个工具，再点格子来画 👇</div>
+          <div class="edit-hint" data-i18n="edit.hint">先点一个工具，再点格子来画 👇</div>
           <div class="palette" id="palette">
-            <button class="brush current" data-brush="wall">🪨<span>障碍</span></button>
-            <button class="brush" data-brush="star">⭐<span>宝贝</span></button>
-            <button class="brush" data-brush="start">🤖<span>起点</span></button>
-            <button class="brush" data-brush="goal">🔋<span>电池</span></button>
-            <button class="brush" data-brush="erase">🧹<span>擦掉</span></button>
+            <button class="brush current" data-brush="wall">🪨<span data-i18n="edit.wall">障碍</span></button>
+            <button class="brush" data-brush="star">⭐<span data-i18n="edit.star">宝贝</span></button>
+            <button class="brush" data-brush="start">🤖<span data-i18n="edit.start">起点</span></button>
+            <button class="brush" data-brush="goal">🔋<span data-i18n="edit.goal">电池</span></button>
+            <button class="brush" data-brush="erase">🧹<span data-i18n="edit.erase">擦掉</span></button>
           </div>
           <div class="edit-actions">
-            <button class="act btn-edit-size"  id="btnEditSize">📐 换大小</button>
-            <button class="act btn-edit-clear" id="btnEditClear">🗑 清空</button>
-            <button class="act btn-edit-back"  id="btnEditBack">← 返回</button>
-            <button class="act btn-edit-play"  id="btnEditPlay">▶ 开始玩</button>
+            <button class="act btn-edit-size"  id="btnEditSize" data-i18n="edit.size">📐 换大小</button>
+            <button class="act btn-edit-clear" id="btnEditClear" data-i18n="edit.clear">🗑 清空</button>
+            <button class="act btn-edit-back"  id="btnEditBack" data-i18n="edit.back">← 返回</button>
+            <button class="act btn-edit-play"  id="btnEditPlay" data-i18n="edit.play">▶ 开始玩</button>
           </div>
         </div>
       </div>
@@ -68,24 +69,25 @@
   <!-- 选关浮层 -->
   <div class="overlay" id="levelOverlay">
     <div class="card level-card">
-      <h2>选择关卡</h2>
+      <h2 data-i18n="picker.title">选择关卡</h2>
       <div class="level-select" id="levelSelect"></div>
-      <button class="level-build" id="levelBuild">🏗 自己造一关</button>
-      <button class="level-close" id="levelClose">关闭</button>
+      <button class="level-build" id="levelBuild" data-i18n="picker.build">🏗 自己造一关</button>
+      <button class="level-close" id="levelClose" data-i18n="picker.close">关闭</button>
     </div>
   </div>
 
   <div class="overlay" id="overlay">
     <div class="card">
       <div class="emoji" id="cardEmoji">🎉</div>
-      <h2 id="cardTitle">太棒啦！</h2>
-      <p id="cardText">机器人充上电了！</p>
-      <button id="cardBtn">下一关 →</button>
+      <h2 id="cardTitle" data-i18n="card.win.title">太棒啦！</h2>
+      <p id="cardText" data-i18n="card.win.text">机器人充上电了！</p>
+      <button id="cardBtn" data-i18n="card.next">下一关 →</button>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
+  <script src="js/i18n.js"></script>
   <script src="js/levels.js"></script>
   <script src="js/state.js"></script>
   <script src="js/board.js"></script>
