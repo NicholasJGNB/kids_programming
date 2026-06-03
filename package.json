@@ -1,0 +1,27 @@
+{
+  "name": "kids-programming-game",
+  "version": "1.0.0",
+  "description": "小机器人去充电 · 儿童编程启蒙游戏（零依赖、打开即玩）",
+  "scripts": {
+    "test": "node tests/levels.test.js && node tests/loop.test.js",
+    "test:e2e": "node tests/smoke.e2e.js",
+    "eval": "node tools/eval-levels.js",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "kids",
+    "programming",
+    "education",
+    "game",
+    "scratch",
+    "coding-for-kids"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NicholasJGNB/kids_programming.git"
+  },
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}

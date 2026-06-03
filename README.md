@@ -12,6 +12,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/NicholasJGNB/kids_programming/actions"><img alt="CI" src="https://github.com/NicholasJGNB/kids_programming/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg">
   <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen.svg">
   <img alt="Made for kids" src="https://img.shields.io/badge/made%20for-kids-ff69b4.svg">
@@ -73,16 +74,28 @@ python3 -m http.server 8000
 
 ```
 kids_programming/
-├── index.html              # 游戏本体（HTML + CSS + JS）
-├── README.md               # 本文件（面向开发者/使用者）
-├── microbit-小车教程.md     # 软件→硬件：micro:bit 小车上手教程
-├── CONTRIBUTING.md         # 贡献指南
-├── CHANGELOG.md            # 版本变更记录
-├── LICENSE                 # MIT 许可证
+├── index.html              # 游戏页面（结构）
+├── css/
+│   └── style.css           # 样式
+├── js/                     # 游戏逻辑（按 <script> 顺序加载，共享全局作用域、零依赖）
+│   ├── levels.js           #   关卡数据与障碍/奖励皮肤
+│   ├── state.js            #   全局状态与 DOM 引用
+│   ├── board.js            #   棋盘渲染·选关·机器人定位
+│   ├── editor.js           #   自由搭建（造关）模式
+│   ├── program.js          #   命令条·循环·运行·特效·音效
+│   └── main.js             #   按钮事件绑定与启动
+├── tests/                  # 测试
+│   ├── levels.test.js      #   关卡可解性
+│   ├── loop.test.js        #   循环展开逻辑
+│   └── smoke.e2e.js        #   Playwright 端到端冒烟测试
+├── tools/
+│   └── eval-levels.js      # 关卡难度评估（步数/岔路/宝贝/动脑分 + 可解性）
 ├── docs/
 │   └── 家长指南.md          # 面向家长的玩法说明与成长路线
-└── tools/
-    └── eval-levels.js      # 关卡设计评估脚本（步数/岔路/宝贝/动脑分 + 可解性校验）
+├── microbit-小车教程.md     # 软件→硬件：micro:bit 小车上手教程
+├── .github/                # CI 工作流 + Issue/PR 模板
+├── package.json            # 脚本入口（test / eval / serve）
+├── CONTRIBUTING.md · CHANGELOG.md · LICENSE
 ```
 
 ## 🧪 关卡评估工具

@@ -20,8 +20,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
-const LEVELS = eval(html.match(/const LEVELS = (\[[\s\S]*?\n\]);/)[1]);
+const src = fs.readFileSync(path.join(__dirname, "..", "js", "levels.js"), "utf8");
+const LEVELS = eval(src.match(/const LEVELS = (\[[\s\S]*?\n\]);/)[1]);
 
 function bfs(lv, a, b) {
   const wall = new Set((lv.walls || []).map(w => w.x + "," + w.y));
