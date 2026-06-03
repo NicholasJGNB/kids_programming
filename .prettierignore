@@ -1,0 +1,4 @@
+node_modules/
+icons/
+*.md
+package-lock.json

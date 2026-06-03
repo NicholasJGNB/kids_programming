@@ -14,12 +14,13 @@ function startEditor() {
   document.body.classList.add('editing');
   // 新建一张空白 6x6 地图，先放好起点和电池
   customLevel = {
-    cols: 6, rows: 6,
+    cols: 6,
+    rows: 6,
     start: { x: 0, y: 5 },
-    goal:  { x: 5, y: 0 },
+    goal: { x: 5, y: 0 },
     walls: [],
     stars: [],
-    hint: ''
+    hint: '',
   };
   program = [];
   renderProgram();
@@ -30,9 +31,9 @@ function startEditor() {
 function editCellAt(x, y) {
   const lv = customLevel;
   const isStart = lv.start && lv.start.x === x && lv.start.y === y;
-  const isGoal  = lv.goal  && lv.goal.x === x && lv.goal.y === y;
-  const wallIdx = lv.walls.findIndex(w => w.x === x && w.y === y);
-  const starIdx = lv.stars.findIndex(s => s.x === x && s.y === y);
+  const isGoal = lv.goal && lv.goal.x === x && lv.goal.y === y;
+  const wallIdx = lv.walls.findIndex((w) => w.x === x && w.y === y);
+  const starIdx = lv.stars.findIndex((s) => s.x === x && s.y === y);
 
   const removeAll = () => {
     if (wallIdx >= 0) lv.walls.splice(wallIdx, 1);
@@ -41,27 +42,51 @@ function editCellAt(x, y) {
 
   switch (editBrush) {
     case 'wall':
-      if (isStart || isGoal) { toast(t('edit.isStartOrGoal')); return; }
-      if (wallIdx >= 0) { lv.walls.splice(wallIdx, 1); }   // 再点一次擦掉
-      else { if (starIdx >= 0) lv.stars.splice(starIdx, 1); lv.walls.push({ x, y }); }
+      if (isStart || isGoal) {
+        toast(t('edit.isStartOrGoal'));
+        return;
+      }
+      if (wallIdx >= 0) {
+        lv.walls.splice(wallIdx, 1);
+      } // 再点一次擦掉
+      else {
+        if (starIdx >= 0) lv.stars.splice(starIdx, 1);
+        lv.walls.push({ x, y });
+      }
       break;
     case 'star':
-      if (isStart || isGoal) { toast(t('edit.isStartOrGoal')); return; }
-      if (starIdx >= 0) { lv.stars.splice(starIdx, 1); }
-      else { if (wallIdx >= 0) lv.walls.splice(wallIdx, 1); lv.stars.push({ x, y }); }
+      if (isStart || isGoal) {
+        toast(t('edit.isStartOrGoal'));
+        return;
+      }
+      if (starIdx >= 0) {
+        lv.stars.splice(starIdx, 1);
+      } else {
+        if (wallIdx >= 0) lv.walls.splice(wallIdx, 1);
+        lv.stars.push({ x, y });
+      }
       break;
     case 'start':
-      if (isGoal) { toast(t('edit.alreadyGoal')); return; }
+      if (isGoal) {
+        toast(t('edit.alreadyGoal'));
+        return;
+      }
       removeAll();
       lv.start = { x, y };
       break;
     case 'goal':
-      if (isStart) { toast(t('edit.alreadyStart')); return; }
+      if (isStart) {
+        toast(t('edit.alreadyStart'));
+        return;
+      }
       removeAll();
       lv.goal = { x, y };
       break;
     case 'erase':
-      if (isStart || isGoal) { toast(t('edit.cantEraseSG')); return; }
+      if (isStart || isGoal) {
+        toast(t('edit.cantEraseSG'));
+        return;
+      }
       removeAll();
       break;
   }
@@ -72,7 +97,7 @@ function editCellAt(x, y) {
 /* 选画笔 */
 function selectBrush(b) {
   editBrush = b;
-  document.querySelectorAll('.palette .brush').forEach(el => {
+  document.querySelectorAll('.palette .brush').forEach((el) => {
     el.classList.toggle('current', el.dataset.brush === b);
   });
 }
@@ -89,7 +114,7 @@ function cycleEditSize() {
   customLevel.walls = customLevel.walls.filter(inb);
   customLevel.stars = customLevel.stars.filter(inb);
   if (!inb(customLevel.start)) customLevel.start = { x: 0, y: next - 1 };
-  if (!inb(customLevel.goal))  customLevel.goal  = { x: next - 1, y: 0 };
+  if (!inb(customLevel.goal)) customLevel.goal = { x: next - 1, y: 0 };
   toast(t('edit.resized', { n: next }));
   buildBoard();
 }
@@ -105,15 +130,25 @@ function clearEditor() {
 function validateCustom() {
   const lv = customLevel;
   if (!lv.start || !lv.goal) return t('edit.needStartGoal');
-  const wall = new Set(lv.walls.map(w => w.x + ',' + w.y));
+  const wall = new Set(lv.walls.map((w) => w.x + ',' + w.y));
   const free = (x, y) => x >= 0 && y >= 0 && x < lv.cols && y < lv.rows && !wall.has(x + ',' + y);
   const seen = new Set([lv.start.x + ',' + lv.start.y]);
   const q = [[lv.start.x, lv.start.y]];
   while (q.length) {
     const [x, y] = q.shift();
-    [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy]) => {
-      const nx = x+dx, ny = y+dy, k = nx+','+ny;
-      if (free(nx, ny) && !seen.has(k)) { seen.add(k); q.push([nx, ny]); }
+    [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ].forEach(([dx, dy]) => {
+      const nx = x + dx,
+        ny = y + dy,
+        k = nx + ',' + ny;
+      if (free(nx, ny) && !seen.has(k)) {
+        seen.add(k);
+        q.push([nx, ny]);
+      }
     });
   }
   if (!seen.has(lv.goal.x + ',' + lv.goal.y)) return t('edit.noReach');
@@ -126,7 +161,10 @@ function validateCustom() {
 /* 从搭建切换到试玩 */
 function playCustom() {
   const err = validateCustom();
-  if (err) { toast(err); return; }
+  if (err) {
+    toast(err);
+    return;
+  }
   editing = false;
   document.body.classList.remove('editing');
   customLevel.hintKey = 'edit.customHint';

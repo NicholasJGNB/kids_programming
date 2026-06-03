@@ -1,6 +1,6 @@
 name: CI
 
-# 每次推送或 PR 都自动跑：关卡可解性、循环逻辑、端到端冒烟测试
+# 每次推送或 PR 都自动跑：代码规范、格式、关卡可解性、循环逻辑、端到端冒烟测试
 on:
   push:
     branches: ["**"]
@@ -17,6 +17,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: 安装开发依赖（ESLint / Prettier）
+        run: npm install -D eslint prettier
+
+      - name: 代码规范检查（ESLint）
+        run: npm run lint
+
+      - name: 代码格式检查（Prettier）
+        run: npm run format:check
 
       - name: 单元测试（关卡可解性 + 循环逻辑）
         run: npm test

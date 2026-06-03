@@ -30,12 +30,17 @@ cd kids_programming
 python3 -m http.server 8000   # 然后浏览器打开 http://localhost:8000
 ```
 
-测试 / 关卡校验需要 Node.js：
+测试 / 校验 / 代码规范需要 Node.js：
 
 ```bash
-node tools/eval-levels.js     # 关卡难度指标 + 可解性校验
-npm test                      # 运行测试（见 tests/）
+npm test            # 单元测试：关卡可解性 + 循环逻辑
+npm run eval        # 关卡难度指标 + 可解性校验
+npm run lint        # ESLint 代码规范检查
+npm run format      # Prettier 自动格式化
+npm run test:e2e    # Playwright 端到端冒烟测试（需先装 playwright）
 ```
+
+> 提交前建议跑一遍 `npm run format && npm run lint && npm test`，CI 也会自动检查这些。
 
 ## 开发约定
 

@@ -6,44 +6,44 @@
  * 做法：从 js/program.js 中抽取 flattenProgram 的函数源码，在受控作用域里
  * 注入一个可设置的全局 program，逐个用例校验展开结果。
  */
-"use strict";
-const fs = require("fs");
-const path = require("path");
-const assert = require("assert");
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
 
-const src = fs.readFileSync(path.join(__dirname, "..", "js", "program.js"), "utf8");
+const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'program.js'), 'utf8');
 const fnSrc = src.match(/function flattenProgram\(\)\s*\{[\s\S]*?\n\}/)[0];
 
 // 构造一个工厂：传入 program，返回 flattenProgram 的执行结果
-const makeFlatten = new Function(
-  "program",
-  `${fnSrc}\n return flattenProgram();`
-);
-const dirs = p => makeFlatten(p).map(s => s.dir).join(",");
+const makeFlatten = new Function('program', `${fnSrc}\n return flattenProgram();`);
+const dirs = (p) =>
+  makeFlatten(p)
+    .map((s) => s.dir)
+    .join(',');
 
 // —— 用例 ——
 // 圈住后面：圈里两个动作重复 2 次
-assert.strictEqual(dirs([{ loop: 2, body: ["right", "up"] }]), "right,up,right,up");
+assert.strictEqual(dirs([{ loop: 2, body: ['right', 'up'] }]), 'right,up,right,up');
 // 圈前有普通动作
-assert.strictEqual(dirs(["up", { loop: 3, body: ["right"] }]), "up,right,right,right");
+assert.strictEqual(dirs(['up', { loop: 3, body: ['right'] }]), 'up,right,right,right');
 // 圈后还有普通动作
-assert.strictEqual(dirs([{ loop: 2, body: ["right"] }, "up"]), "right,right,up");
+assert.strictEqual(dirs([{ loop: 2, body: ['right'] }, 'up']), 'right,right,up');
 // 圈前圈后都有
 assert.strictEqual(
-  dirs(["up", { loop: 2, body: ["right", "down"] }, "left"]),
-  "up,right,down,right,down,left"
+  dirs(['up', { loop: 2, body: ['right', 'down'] }, 'left']),
+  'up,right,down,right,down,left'
 );
 // 纯方向
-assert.strictEqual(dirs(["up", "right"]), "up,right");
+assert.strictEqual(dirs(['up', 'right']), 'up,right');
 // 空圈不产生步骤
-assert.strictEqual(dirs([{ loop: 3, body: [] }]), "");
+assert.strictEqual(dirs([{ loop: 3, body: [] }]), '');
 // 次数为 1 等于不循环
-assert.strictEqual(dirs([{ loop: 1, body: ["right", "up"] }]), "right,up");
+assert.strictEqual(dirs([{ loop: 1, body: ['right', 'up'] }]), 'right,up');
 
 // key 用于运行时高亮，校验格式：圈内 "i-j"，圈外 "i"
-const steps = makeFlatten(["up", { loop: 2, body: ["right"] }]);
-assert.strictEqual(steps[0].key, "0");     // 第0项普通动作
-assert.strictEqual(steps[1].key, "1-0");   // 第1项循环的 body[0]，第1遍
-assert.strictEqual(steps[2].key, "1-0");   // 第2遍仍指向同一块
+const steps = makeFlatten(['up', { loop: 2, body: ['right'] }]);
+assert.strictEqual(steps[0].key, '0'); // 第0项普通动作
+assert.strictEqual(steps[1].key, '1-0'); // 第1项循环的 body[0]，第1遍
+assert.strictEqual(steps[2].key, '1-0'); // 第2遍仍指向同一块
 
-console.log("✓ 循环逻辑测试通过：8 个用例全部正确");
+console.log('✓ 循环逻辑测试通过：8 个用例全部正确');

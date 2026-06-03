@@ -5,7 +5,9 @@
  * 依次加载、共享同一个全局作用域——这样保留了"双击 index.html 即可游玩"的零依赖特性。
  */
 
-function level() { return levelIndex === -1 ? customLevel : LEVELS[levelIndex]; }
+function level() {
+  return levelIndex === -1 ? customLevel : LEVELS[levelIndex];
+}
 
 /* 渲染地图与机器人初始位置 */
 function buildBoard() {
@@ -20,7 +22,7 @@ function buildBoard() {
       cell.className = 'cell';
       cell.dataset.x = x;
       cell.dataset.y = y;
-      if (lv.walls.some(w => w.x === x && w.y === y)) {
+      if (lv.walls.some((w) => w.x === x && w.y === y)) {
         cell.classList.add('wall');
         cell.textContent = pickEmoji(WALL_EMOJIS, x, y, 0);
       }
@@ -28,13 +30,19 @@ function buildBoard() {
         cell.classList.add('goal');
         cell.textContent = '🔋';
       }
-      if ((lv.stars || []).some(s => s.x === x && s.y === y)) {
+      if ((lv.stars || []).some((s) => s.x === x && s.y === y)) {
         cell.classList.add('star');
         cell.dataset.star = '1';
         cell.textContent = pickEmoji(REWARD_EMOJIS, x, y, 4);
       }
       // 编辑模式下，起点格显示一个淡淡的🤖标记
-      if (editing && lv.start && lv.start.x === x && lv.start.y === y && !(lv.goal && lv.goal.x===x && lv.goal.y===y)) {
+      if (
+        editing &&
+        lv.start &&
+        lv.start.x === x &&
+        lv.start.y === y &&
+        !(lv.goal && lv.goal.x === x && lv.goal.y === y)
+      ) {
         cell.classList.add('startmark');
         cell.textContent = '🤖';
       }
@@ -43,7 +51,7 @@ function buildBoard() {
   }
 
   // 这一关还没捡到的星星（坐标字符串集合）
-  starsLeft = new Set((lv.stars || []).map(s => s.x + ',' + s.y));
+  starsLeft = new Set((lv.stars || []).map((s) => s.x + ',' + s.y));
 
   // 机器人（编辑模式下若还没放起点，就先不显示机器人）
   if (lv.start) {
@@ -85,7 +93,7 @@ function renderLevelSelect() {
     btn.className = 'level-btn';
     if (i === levelIndex) btn.classList.add('current');
     if (cleared.has(i)) btn.classList.add('done');
-    btn.textContent = (i + 1);
+    btn.textContent = i + 1;
     btn.onclick = () => goToLevel(i);
     box.appendChild(btn);
   }
@@ -93,9 +101,9 @@ function renderLevelSelect() {
 
 /* 跳到指定关卡 */
 function goToLevel(i) {
-  if (isRunning) return;          // 运行中不许切关
+  if (isRunning) return; // 运行中不许切关
   closeLevelPicker();
-  if (i === levelIndex) return;   // 已经在这关
+  if (i === levelIndex) return; // 已经在这关
   levelIndex = i;
   program = [];
   renderProgram();

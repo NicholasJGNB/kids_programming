@@ -6,14 +6,14 @@
  */
 
 /* 绑定按钮 */
-document.getElementById('btnUp').onclick    = () => addCommandWithSound('up');
-document.getElementById('btnDown').onclick  = () => addCommandWithSound('down');
-document.getElementById('btnLeft').onclick  = () => addCommandWithSound('left');
+document.getElementById('btnUp').onclick = () => addCommandWithSound('up');
+document.getElementById('btnDown').onclick = () => addCommandWithSound('down');
+document.getElementById('btnLeft').onclick = () => addCommandWithSound('left');
 document.getElementById('btnRight').onclick = () => addCommandWithSound('right');
-document.getElementById('btnLoop').onclick    = addLoop;
-document.getElementById('btnUndo').onclick    = undo;
-document.getElementById('btnClear').onclick   = clearProgram;
-document.getElementById('btnRun').onclick     = run;
+document.getElementById('btnLoop').onclick = addLoop;
+document.getElementById('btnUndo').onclick = undo;
+document.getElementById('btnClear').onclick = clearProgram;
+document.getElementById('btnRun').onclick = run;
 
 // 循环块上的 − / ＋ 调次数（事件委托）
 programEl.addEventListener('click', (e) => {
@@ -23,18 +23,18 @@ programEl.addEventListener('click', (e) => {
   changeLoop(i, btn.dataset.act === 'inc' ? 1 : -1);
 });
 document.getElementById('levelToggle').onclick = openLevelPicker;
-document.getElementById('levelClose').onclick  = closeLevelPicker;
+document.getElementById('levelClose').onclick = closeLevelPicker;
 // 点浮层空白处也能关闭
 document.getElementById('levelOverlay').onclick = (e) => {
   if (e.target.id === 'levelOverlay') closeLevelPicker();
 };
 
 // 自由搭建相关按钮
-document.getElementById('levelBuild').onclick   = startEditor;
-document.getElementById('btnEditSize').onclick  = cycleEditSize;
+document.getElementById('levelBuild').onclick = startEditor;
+document.getElementById('btnEditSize').onclick = cycleEditSize;
 document.getElementById('btnEditClear').onclick = clearEditor;
-document.getElementById('btnEditBack').onclick  = exitEditor;
-document.getElementById('btnEditPlay').onclick  = playCustom;
+document.getElementById('btnEditBack').onclick = exitEditor;
+document.getElementById('btnEditPlay').onclick = playCustom;
 // 选画笔
 document.getElementById('palette').addEventListener('click', (e) => {
   const b = e.target.closest('.brush');
@@ -49,7 +49,9 @@ boardEl.addEventListener('click', (e) => {
 });
 
 // 窗口尺寸变化时重新摆放机器人
-window.addEventListener('resize', () => { if (robot) placeRobot(false); });
+window.addEventListener('resize', () => {
+  if (robot) placeRobot(false);
+});
 
 // 语言切换：中 ⇄ EN
 document.getElementById('langToggle').onclick = () => {
@@ -58,13 +60,13 @@ document.getElementById('langToggle').onclick = () => {
 
 // 语言切换后，重绘需要动态文案的部分（状态栏标签、关卡提示、命令条占位、循环按钮）
 function refreshDynamicI18n() {
-  buildBoard();        // 重绘状态栏标签 + 关卡提示
-  renderProgram();     // 命令条里的占位文字
-  updateLoopBtn();     // 🔁/结束圈 按钮文案
+  buildBoard(); // 重绘状态栏标签 + 关卡提示
+  renderProgram(); // 命令条里的占位文字
+  updateLoopBtn(); // 🔁/结束圈 按钮文案
 }
 
 // 开始游戏
-applyI18n();           // 先按当前语言把静态文案刷一遍
+applyI18n(); // 先按当前语言把静态文案刷一遍
 buildBoard();
 renderProgram();
 
@@ -72,6 +74,8 @@ renderProgram();
 // 仅在 https 或 localhost 下生效；file:// 直接打开会跳过，不影响游玩。
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => { /* 离线功能不可用也无妨 */ });
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      /* 离线功能不可用也无妨 */
+    });
   });
 }

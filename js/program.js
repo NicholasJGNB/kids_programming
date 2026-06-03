@@ -31,8 +31,8 @@ function starBurst(x, y, emoji) {
   const s = document.createElement('div');
   s.className = 'star-burst';
   s.textContent = emoji || '⭐';
-  s.style.left = (cell.offsetLeft + cell.offsetWidth / 2 - 14) + 'px';
-  s.style.top  = (cell.offsetTop + cell.offsetHeight / 2 - 14) + 'px';
+  s.style.left = cell.offsetLeft + cell.offsetWidth / 2 - 14 + 'px';
+  s.style.top = cell.offsetTop + cell.offsetHeight / 2 - 14 + 'px';
   boardEl.appendChild(s);
   setTimeout(() => s.remove(), 600);
 }
@@ -44,9 +44,9 @@ function placeRobot(animate) {
   if (!cell) return;
   if (!animate) r.style.transition = 'none';
   // offsetLeft/Top 是相对于 #board（已设为 position:relative）的精确像素位置
-  r.style.left   = cell.offsetLeft + 'px';
-  r.style.top    = cell.offsetTop + 'px';
-  r.style.width  = cell.offsetWidth + 'px';
+  r.style.left = cell.offsetLeft + 'px';
+  r.style.top = cell.offsetTop + 'px';
+  r.style.width = cell.offsetWidth + 'px';
   r.style.height = cell.offsetHeight + 'px';
   if (!animate) {
     // 强制重绘后恢复动画
@@ -108,7 +108,8 @@ function renderProgram() {
 /* 命令总数（含循环里的），防止排太多 */
 function totalCount() {
   let n = 0;
-  for (const it of program) n += (typeof it === 'object' && it.loop !== undefined) ? it.body.length + 1 : 1;
+  for (const it of program)
+    n += typeof it === 'object' && it.loop !== undefined ? it.body.length + 1 : 1;
   return n;
 }
 
@@ -117,12 +118,15 @@ function addLoop() {
   if (isRunning) return;
   if (openLoop) {
     // 收口；如果圈里是空的，就把这个空圈删掉
-    if (openLoop.body.length === 0) program = program.filter(it => it !== openLoop);
+    if (openLoop.body.length === 0) program = program.filter((it) => it !== openLoop);
     openLoop.open = false;
     openLoop = null;
     tone(560, 0.08, 0, 'square', 0.12);
   } else {
-    if (totalCount() >= 60) { toast(t('toast.tooMany')); return; }
+    if (totalCount() >= 60) {
+      toast(t('toast.tooMany'));
+      return;
+    }
     openLoop = { loop: 2, body: [], open: true };
     program.push(openLoop);
     tone(740, 0.07, 0, 'square', 0.12);
@@ -150,7 +154,10 @@ function changeLoop(i, delta) {
 /* 加方向命令：圈开着就放进圈里，否则放到外面 */
 function addCommand(cmd) {
   if (isRunning) return;
-  if (totalCount() >= 60) { toast(t('toast.tooMany')); return; }
+  if (totalCount() >= 60) {
+    toast(t('toast.tooMany'));
+    return;
+  }
   if (openLoop) openLoop.body.push(cmd);
   else program.push(cmd);
   renderProgram();
@@ -163,7 +170,7 @@ function undo() {
     openLoop.body.pop();
   } else if (openLoop) {
     // 空圈，撤回就把圈也去掉
-    program = program.filter(it => it !== openLoop);
+    program = program.filter((it) => it !== openLoop);
     openLoop = null;
     updateLoopBtn();
   } else {
@@ -182,7 +189,7 @@ function clearProgram() {
 }
 
 function setButtonsDisabled(disabled) {
-  document.querySelectorAll('button').forEach(b => {
+  document.querySelectorAll('button').forEach((b) => {
     if (b.id !== 'cardBtn') b.disabled = disabled;
   });
 }
@@ -205,7 +212,7 @@ function flattenProgram() {
 }
 
 function clearRunHighlight() {
-  programEl.querySelectorAll('.running').forEach(c => c.classList.remove('running'));
+  programEl.querySelectorAll('.running').forEach((c) => c.classList.remove('running'));
 }
 
 /* 运行程序：一步步执行 */
@@ -213,7 +220,7 @@ async function run() {
   if (isRunning) return;
   // 出发前自动收口还开着的循环圈
   if (openLoop) {
-    if (openLoop.body.length === 0) program = program.filter(it => it !== openLoop);
+    if (openLoop.body.length === 0) program = program.filter((it) => it !== openLoop);
     openLoop.open = false;
     openLoop = null;
     updateLoopBtn();
@@ -249,11 +256,14 @@ async function run() {
       // 撞墙或出界：朝障碍方向冲一下、撞击、再弹回
       soundBump();
       await crash(d, nx, ny);
-      const hitRock = level().walls.some(w => w.x === nx && w.y === ny);
-      finishRun(false,
+      const hitRock = level().walls.some((w) => w.x === nx && w.y === ny);
+      finishRun(
+        false,
         hitRock ? t('run.hitWallTitle') : t('run.hitEdgeTitle'),
         hitRock ? t('run.hitWallTextRock') : t('run.hitEdgeText'),
-        '😵', t('run.retry'));
+        '😵',
+        t('run.retry')
+      );
       return;
     }
     robot.x = nx;
@@ -270,9 +280,13 @@ async function run() {
       if (starsLeft.size > 0) {
         clearRunHighlight();
         await sleep(200);
-        finishRun(false, t('run.needStarsTitle'),
+        finishRun(
+          false,
+          t('run.needStarsTitle'),
           t('run.needStarsText', { n: starsLeft.size }),
-          '🤔', t('run.retry'));
+          '🤔',
+          t('run.retry')
+        );
         return;
       }
       clearRunHighlight();
@@ -284,16 +298,19 @@ async function run() {
         finishRun(true, t('run.customWinTitle'), t('run.customWinText'), '🎉', t('run.replay'));
         return;
       }
-      cleared.add(levelIndex);  // 记下这一关已通关，显示 ⭐
+      cleared.add(levelIndex); // 记下这一关已通关，显示 ⭐
       const isLast = levelIndex === LEVELS.length - 1;
-      if (isLast) soundCheer(); else soundWin();
+      if (isLast) soundCheer();
+      else soundWin();
       await sleep(700);
-      finishRun(true,
+      finishRun(
+        true,
         isLast ? t('run.allClearTitle') : t('card.win.title'),
         isLast ? t('run.allClearText') : t('card.win.text'),
         isLast ? '🏆' : '🎉',
         isLast ? t('run.replay') : t('card.next'),
-        isLast);
+        isLast
+      );
       return;
     }
   }
@@ -307,7 +324,7 @@ async function run() {
 function canMoveTo(x, y) {
   const lv = level();
   if (x < 0 || y < 0 || x >= lv.cols || y >= lv.rows) return false;
-  if (lv.walls.some(w => w.x === x && w.y === y)) return false;
+  if (lv.walls.some((w) => w.x === x && w.y === y)) return false;
   return true;
 }
 
@@ -327,8 +344,11 @@ function finishRun(success, title, text, emoji, btnLabel, isFinalWin) {
     if (success) {
       if (levelIndex === -1) {
         // 自己造的关：留在原关，清空命令重玩
-      } else if (isFinalWin) { levelIndex = 0; }
-      else { levelIndex++; }
+      } else if (isFinalWin) {
+        levelIndex = 0;
+      } else {
+        levelIndex++;
+      }
       program = [];
       renderProgram();
       buildBoard();
@@ -353,7 +373,10 @@ async function crash(dir, tx, ty) {
   // 撞上的瞬间：💥 + 石头晃动 + 机器人受惊变大一下
   showBurst(tx, ty, dir);
   const rock = boardEl.querySelector(`.cell.wall[data-x="${tx}"][data-y="${ty}"]`);
-  if (rock) { rock.classList.add('shake'); setTimeout(() => rock.classList.remove('shake'), 400); }
+  if (rock) {
+    rock.classList.add('shake');
+    setTimeout(() => rock.classList.remove('shake'), 400);
+  }
   r.classList.add('bump');
 
   // 弹回原位
@@ -376,25 +399,25 @@ function showBurst(tx, ty, dir) {
   const b = document.createElement('div');
   b.className = 'crash-burst';
   b.textContent = '💥';
-  b.style.left = (cell.offsetLeft + cell.offsetWidth / 2 - 15) + 'px';
-  b.style.top  = (cell.offsetTop  + cell.offsetHeight / 2 - 15) + 'px';
+  b.style.left = cell.offsetLeft + cell.offsetWidth / 2 - 15 + 'px';
+  b.style.top = cell.offsetTop + cell.offsetHeight / 2 - 15 + 'px';
   boardEl.appendChild(b);
   setTimeout(() => b.remove(), 650);
 }
 
 /* 撒花特效：从屏幕顶部落下一堆彩色碎纸 */
 function confetti(count) {
-  const colors = ['#ff6b9d','#ffd86b','#5b8def','#4cc38a','#ff9f43','#b98bff','#ff5e5e'];
+  const colors = ['#ff6b9d', '#ffd86b', '#5b8def', '#4cc38a', '#ff9f43', '#b98bff', '#ff5e5e'];
   for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
     p.className = 'confetti-piece';
     const size = 8 + Math.random() * 8;
-    p.style.left = (Math.random() * 100) + 'vw';
+    p.style.left = Math.random() * 100 + 'vw';
     p.style.width = size + 'px';
-    p.style.height = (size * 0.6) + 'px';
+    p.style.height = size * 0.6 + 'px';
     p.style.background = colors[Math.floor(Math.random() * colors.length)];
-    p.style.animationDelay = (Math.random() * 0.4) + 's';
-    p.style.animationDuration = (1.8 + Math.random() * 1.4) + 's';
+    p.style.animationDelay = Math.random() * 0.4 + 's';
+    p.style.animationDuration = 1.8 + Math.random() * 1.4 + 's';
     document.body.appendChild(p);
     setTimeout(() => p.remove(), 3600);
   }
@@ -412,7 +435,9 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 /* ===== 音效（用浏览器自带的 Web Audio 合成，不需要音频文件）===== */
 let audioCtx = null;
@@ -442,13 +467,21 @@ function tone(freq, dur, when = 0, type = 'sine', vol = 0.22) {
   osc.start(t0);
   osc.stop(t0 + dur + 0.02);
 }
-function soundStep()  { tone(660, 0.12, 0, 'triangle', 0.18); }              // 走一步：清脆"嘀"
-function soundBump()  { tone(150, 0.28, 0, 'sawtooth', 0.25); }             // 撞墙：低沉"咚"
-function soundWin()   {                                                     // 过关：一小段上行旋律
+function soundStep() {
+  tone(660, 0.12, 0, 'triangle', 0.18);
+} // 走一步：清脆"嘀"
+function soundBump() {
+  tone(150, 0.28, 0, 'sawtooth', 0.25);
+} // 撞墙：低沉"咚"
+function soundWin() {
+  // 过关：一小段上行旋律
   [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, i * 0.13, 'triangle', 0.22));
 }
-function soundCheer() {                                                      // 通关：更长更欢快
-  [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, 0.26, i * 0.12, 'triangle', 0.22));
+function soundCheer() {
+  // 通关：更长更欢快
+  [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) =>
+    tone(f, 0.26, i * 0.12, 'triangle', 0.22)
+  );
 }
 
 // 手机浏览器要求"用户点击后"才允许出声，第一次触摸时唤醒音频

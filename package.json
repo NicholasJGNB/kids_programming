@@ -6,6 +6,9 @@
     "test": "node tests/levels.test.js && node tests/loop.test.js",
     "test:e2e": "node tests/smoke.e2e.js",
     "eval": "node tools/eval-levels.js",
+    "lint": "eslint \"js/**/*.js\" \"tests/**/*.js\" \"tools/**/*.js\" sw.js",
+    "format": "prettier --write \"js/**/*.js\" \"css/**/*.css\" \"tests/**/*.js\" \"tools/**/*.js\" sw.js manifest.json eslint.config.js",
+    "format:check": "prettier --check \"js/**/*.js\" \"css/**/*.css\" \"tests/**/*.js\" \"tools/**/*.js\" sw.js manifest.json eslint.config.js",
     "serve": "python3 -m http.server 8000"
   },
   "keywords": [
@@ -22,6 +25,8 @@
     "url": "https://github.com/NicholasJGNB/kids_programming.git"
   },
   "devDependencies": {
-    "playwright": "^1.40.0"
+    "eslint": "^9.0.0",
+    "playwright": "^1.40.0",
+    "prettier": "^3.0.0"
   }
 }
