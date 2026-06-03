@@ -15,12 +15,18 @@ document.getElementById('btnUndo').onclick = undo;
 document.getElementById('btnClear').onclick = clearProgram;
 document.getElementById('btnRun').onclick = run;
 
-// 循环块上的 − / ＋ 调次数（事件委托）
+// 命令序列里的交互（事件委托）：删除某个命令、调循环次数
 programEl.addEventListener('click', (e) => {
+  const del = e.target.closest('.del');
+  if (del) {
+    deleteCmd(del.dataset.del);
+    return;
+  }
   const btn = e.target.closest('.loop-btn');
-  if (!btn) return;
-  const i = parseInt(btn.dataset.i, 10);
-  changeLoop(i, btn.dataset.act === 'inc' ? 1 : -1);
+  if (btn) {
+    const i = parseInt(btn.dataset.i, 10);
+    changeLoop(i, btn.dataset.act === 'inc' ? 1 : -1);
+  }
 });
 document.getElementById('levelToggle').onclick = openLevelPicker;
 document.getElementById('levelClose').onclick = closeLevelPicker;

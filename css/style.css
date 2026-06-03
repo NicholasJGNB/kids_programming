@@ -313,42 +313,28 @@ body.editing .lang-toggle {
 }
 
 /* 程序条：固定单行，命令多了左右滑动查看 */
+/* 命令序列：竖向一行一行排，可滚动；每行点 ✕ 删除 */
 .program {
   background: var(--panel);
   border-radius: 16px;
-  padding: 10px;
+  padding: 8px;
   box-shadow: 0 4px 14px rgba(91, 141, 239, 0.12);
   min-height: 58px;
+  max-height: 220px;
   display: flex;
-  flex-wrap: nowrap;
+  flex-direction: column;
   gap: 6px;
-  align-items: center;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
 .program::-webkit-scrollbar {
-  height: 5px;
+  width: 6px;
 }
 .program::-webkit-scrollbar-thumb {
   background: #cfd9f0;
   border-radius: 3px;
-}
-.program .chip {
-  flex: 0 0 auto;
-}
-.chip {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  color: #fff;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
-  animation: pop 0.2s;
 }
 @keyframes pop {
   from {
@@ -358,65 +344,87 @@ body.editing .lang-toggle {
     scale: 1;
   }
 }
-.chip.cmd-up,
-.chip.cmd-down,
-.chip.cmd-left,
-.chip.cmd-right {
-  background: var(--green);
-}
-.chip.running {
-  outline: 4px solid #ffd86b;
-}
-/* 循环"圈"：紫色外框，里面装着被重复的动作 */
-.loop-chip {
+/* 单条命令：一整行（箭头 + 文字 + 删除按钮） */
+.cmd-row {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  border-radius: 14px;
-  background: #efe6ff;
-  border: 2px dashed #b98bff;
-  animation: pop 0.2s;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--green);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
 }
-.loop-chip.open {
+.cmd-row .ico {
+  font-size: 22px;
+  width: 24px;
+  text-align: center;
+}
+.cmd-row .cmd-label {
+  flex: 1;
+  font-size: 15px;
+  font-weight: bold;
+}
+.cmd-row .del {
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.cmd-row .del:active {
+  background: rgba(255, 255, 255, 0.5);
+}
+.cmd-row.running {
+  outline: 3px solid #ffd86b;
+  outline-offset: 1px;
+}
+
+/* 循环框：紫色边框，竖着装被重复的命令 */
+.loop-block {
+  flex: 0 0 auto;
+  border: 2px dashed #b98bff;
+  border-radius: 12px;
+  background: #f3edff;
+  padding: 6px;
+}
+.loop-block.open {
   border-style: solid;
   box-shadow: 0 0 0 3px rgba(185, 139, 255, 0.3);
 }
-.loop-chip .loop-head {
+.loop-block .loop-head {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   background: #b98bff;
   color: #fff;
-  border-radius: 10px;
-  padding: 2px 4px;
-  height: 42px;
+  border-radius: 9px;
+  padding: 3px 6px;
 }
-.loop-chip .loop-body {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+.loop-block .loop-ico {
+  font-size: 16px;
 }
-.loop-chip .loop-ph {
-  color: #a98fd6;
-  font-size: 13px;
-  padding: 0 6px;
-  white-space: nowrap;
-}
-.loop-chip .loop-count {
-  font-size: 18px;
+.loop-block .loop-count {
+  font-size: 17px;
   font-weight: bold;
   min-width: 16px;
   text-align: center;
 }
-.loop-chip .loop-x {
-  font-size: 14px;
+.loop-block .loop-x {
+  font-size: 13px;
   opacity: 0.85;
 }
-.loop-chip .loop-btn {
-  width: 22px;
-  height: 22px;
+.loop-block .loop-btn {
+  width: 24px;
+  height: 24px;
   border: none;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.3);
@@ -427,8 +435,32 @@ body.editing .lang-toggle {
   cursor: pointer;
   padding: 0;
 }
-.loop-chip .loop-btn:active {
+.loop-block .loop-btn:active {
   background: rgba(255, 255, 255, 0.55);
+}
+.loop-block .loop-head .del {
+  margin-left: auto;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.loop-block .loop-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 0 2px 10px;
+}
+.loop-block .loop-ph {
+  color: #a98fd6;
+  font-size: 13px;
+  padding: 4px 6px;
 }
 
 /* 按钮区 */
@@ -707,7 +739,14 @@ body.editing .cell {
     flex: 1 1 auto;
     min-width: 0;
     max-width: 460px;
-    justify-content: center;
+    height: calc(100vh - 96px);
+    justify-content: flex-start;
+  }
+  /* 命令序列填满右栏剩余高度，命令多了在框内竖向滚动 */
+  .program {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 80px;
   }
   /* 地图占左侧，按可用高度决定大小（正方形），留出标题和状态栏的空间 */
   #board {

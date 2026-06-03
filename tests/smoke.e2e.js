@@ -41,14 +41,17 @@ const path = require('path');
     const robot = await page.locator('#robot').count();
     await page.locator('#btnRight').click();
     await page.locator('#btnUp').click();
-    const chips = await page.locator('#program .chip').count();
+    const rows = await page.locator('#program .cmd-row').count();
+    // 点中间一条的 ✕ 删除，验证可单独删除
+    await page.locator('#program .cmd-row').first().locator('.del').click();
+    const rowsAfterDelete = await page.locator('#program .cmd-row').count();
     await page.locator('#btnLoop').click();
-    const loopChip = await page.locator('#program .loop-chip').count();
+    const loopBlock = await page.locator('#program .loop-block').count();
     await page.locator('#levelToggle').click();
     const levelBtns = await page.locator('#levelSelect .level-btn').count();
 
     console.log(
-      `地图格子=${cells} 机器人=${robot} 命令=${chips} 循环块=${loopChip} 选关按钮=${levelBtns}`
+      `格子=${cells} 机器人=${robot} 命令行=${rows} 删后=${rowsAfterDelete} 循环框=${loopBlock} 选关=${levelBtns}`
     );
     console.log('控制台错误:', errors.length ? errors.slice(0, 5) : '无');
 
@@ -56,8 +59,9 @@ const path = require('path');
       errors.length === 0 &&
       cells === 16 &&
       robot === 1 &&
-      chips === 2 &&
-      loopChip === 1 &&
+      rows === 2 &&
+      rowsAfterDelete === 1 &&
+      loopBlock === 1 &&
       levelBtns === 18;
   } finally {
     if (browser) await browser.close();

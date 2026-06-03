@@ -58,40 +58,44 @@ function placeRobot(animate) {
 /* 当前打开着的循环（它的 body 在收集后续动作）；null 表示没开循环 */
 let openLoop = null;
 
-/* 一个方向命令做成箭头方块 */
-function makeChip(cmd, key) {
-  const chip = document.createElement('div');
-  chip.className = 'chip cmd-' + cmd;
-  chip.dataset.key = key;
-  chip.textContent = ARROW[cmd];
-  return chip;
+/* 一个命令做成一整行：箭头 + 文字 + 删除按钮（点 ✕ 删掉它） */
+function makeCmdRow(cmd, key) {
+  const row = document.createElement('div');
+  row.className = 'cmd-row cmd-' + cmd;
+  row.dataset.key = key;
+  row.innerHTML =
+    `<span class="ico">${ARROW[cmd]}</span>` +
+    `<span class="cmd-label">${t('btn.' + cmd)}</span>` +
+    `<button class="del" data-del="${key}" aria-label="delete">✕</button>`;
+  return row;
 }
 
-/* 渲染程序条。循环是一个紫色"圈"，里面装着被重复的动作 */
+/* 渲染命令序列：每个命令竖着排一行；循环是一个紫色框，里面装着被重复的命令。 */
 function renderProgram() {
   programEl.innerHTML = '';
   if (program.length === 0) return;
   program.forEach((item, i) => {
     if (typeof item === 'object' && item.loop !== undefined) {
-      // 循环"圈"
+      // 循环框
       const box = document.createElement('div');
-      box.className = 'loop-chip' + (item.open ? ' open' : '');
+      box.className = 'loop-block' + (item.open ? ' open' : '');
       box.dataset.index = i;
-      // 次数调节
       const head = document.createElement('div');
       head.className = 'loop-head';
       head.innerHTML =
+        `<span class="loop-ico">🔁</span>` +
         `<button class="loop-btn" data-act="dec" data-i="${i}">−</button>` +
         `<span class="loop-x">×</span>` +
         `<span class="loop-count">${item.loop}</span>` +
-        `<button class="loop-btn" data-act="inc" data-i="${i}">＋</button>`;
+        `<button class="loop-btn" data-act="inc" data-i="${i}">＋</button>` +
+        `<button class="del" data-del="${i}" aria-label="delete">✕</button>`;
       box.appendChild(head);
-      // 圈里的动作
+      // 圈里的命令
       const body = document.createElement('div');
       body.className = 'loop-body';
-      item.body.forEach((c, j) => body.appendChild(makeChip(c, i + '-' + j)));
-      if (item.open && item.body.length === 0) {
-        const ph = document.createElement('span');
+      item.body.forEach((c, j) => body.appendChild(makeCmdRow(c, i + '-' + j)));
+      if (item.body.length === 0) {
+        const ph = document.createElement('div');
         ph.className = 'loop-ph';
         ph.textContent = t('loop.placeholder');
         body.appendChild(ph);
@@ -99,10 +103,30 @@ function renderProgram() {
       box.appendChild(body);
       programEl.appendChild(box);
     } else {
-      programEl.appendChild(makeChip(item, '' + i));
+      programEl.appendChild(makeCmdRow(item, '' + i));
     }
   });
-  programEl.scrollLeft = programEl.scrollWidth;
+  // 加命令后自动滚到底，露出最新一行
+  programEl.scrollTop = programEl.scrollHeight;
+}
+
+/* 删除某个命令：path 为 "i"（顶层命令或整个循环）或 "i-j"（循环里的第 j 个） */
+function deleteCmd(path) {
+  if (isRunning) return;
+  const parts = path.split('-').map(Number);
+  if (parts.length === 1) {
+    const removed = program[parts[0]];
+    if (removed === openLoop) {
+      openLoop = null;
+      updateLoopBtn();
+    }
+    program.splice(parts[0], 1);
+  } else {
+    const [i, j] = parts;
+    if (program[i] && program[i].body) program[i].body.splice(j, 1);
+  }
+  tone(420, 0.05, 0, 'square', 0.1);
+  renderProgram();
 }
 
 /* 命令总数（含循环里的），防止排太多 */
@@ -243,9 +267,9 @@ async function run() {
     const active = programEl.querySelector(`[data-key="${steps[s].key}"]`);
     if (active) {
       active.classList.add('running');
-      // 只在命令条内部横向滚动，让当前命令居中可见（不动整个页面）
-      const box = active.closest('.loop-chip') || active;
-      programEl.scrollLeft = box.offsetLeft - programEl.clientWidth / 2 + box.offsetWidth / 2;
+      // 只在命令列表内部竖向滚动，让当前命令居中可见（不动整个页面）
+      const box = active.closest('.loop-block') || active;
+      programEl.scrollTop = box.offsetTop - programEl.clientHeight / 2 + box.offsetHeight / 2;
     }
     const cmd = steps[s].dir;
 

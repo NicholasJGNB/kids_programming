@@ -16,6 +16,7 @@ const SHARED_GLOBALS = [
   'applyI18n',
   'buildBoard',
   'canMoveTo',
+  'deleteCmd',
   'changeLoop',
   'cheer',
   'clearEditor',
