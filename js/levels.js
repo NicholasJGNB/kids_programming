@@ -358,9 +358,12 @@ const WALL_EMOJIS = ['🪨', '💩', '🌵', '🔥', '🧱', '🌳', '🚧', '�
 const REWARD_EMOJIS = ['⭐', '💎', '🍎', '🍓', '🎁', '🍪', '🍰', '🍭', '🍌', '🏆'];
 // 根据关卡序号，固定取出这一关要用的两种皮肤
 function levelSkins(list, salt) {
+  const len = list.length;
+  // levelIndex 可能是 -1（自定义关），用取正的取模，保证下标合法、不会取到空值
+  const mod = (v) => ((v % len) + len) % len;
   const n = levelIndex + salt;
-  const a = list[n % list.length];
-  const b = list[(n * 7 + 3) % list.length];
+  const a = list[mod(n)];
+  const b = list[mod(n * 7 + 3)];
   return a === b ? [a] : [a, b]; // 万一撞上同一个，就只用一种
 }
 // 关内：按坐标在这一关的两种皮肤里固定选一个（同格不变、相邻可不同）
