@@ -5,6 +5,12 @@
  * 依次加载、共享同一个全局作用域——这样保留了"双击 index.html 即可游玩"的零依赖特性。
  */
 
+/* 防误触：禁止文字选中、右键/长按菜单、拖拽（按钮的 click 不受影响，照常可点）。
+   这样小朋友点到按钮以外的地方不会出现"选中高亮"等浏览器行为。 */
+['selectstart', 'contextmenu', 'dragstart', 'gesturestart'].forEach((ev) =>
+  document.addEventListener(ev, (e) => e.preventDefault())
+);
+
 /* 绑定按钮 */
 document.getElementById('btnUp').onclick = () => addCommandWithSound('up');
 document.getElementById('btnDown').onclick = () => addCommandWithSound('down');
