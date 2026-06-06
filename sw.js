@@ -1,10 +1,11 @@
 /*
  * Service Worker：把游戏文件缓存下来，实现"离线也能玩"。
- * 策略：安装时预缓存所有静态资源；请求时优先用缓存（cache-first）。
+ * 策略：网络优先（network-first）——联网时总是拿最新的文件，顺手更新缓存；
+ *       断网时才用上次缓存的版本。这样游戏更新后用户能立刻看到，又保留离线可玩。
  *
- * 改了游戏文件后，把下面的 CACHE 版本号 +1，用户下次联网打开就会拿到新版。
+ * 改了游戏文件后，把下面的 CACHE 版本号 +1（联网用户会自动拿到新版）。
  */
-const CACHE = 'robot-game-v2';
+const CACHE = 'robot-game-v3';
 
 const ASSETS = [
   './',
@@ -39,22 +40,22 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// 请求：缓存优先，命中就用缓存，没命中再走网络（并顺手存起来）
+// 请求：网络优先。联网就拿最新的并更新缓存；失败（断网）才回退到缓存。
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== location.origin) return; // 只管自己的文件
   e.respondWith(
-    caches.match(e.request).then((hit) => {
-      if (hit) return hit;
-      return fetch(e.request)
-        .then((res) => {
-          // 只缓存同源的成功响应
-          if (res.ok && new URL(e.request.url).origin === location.origin) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match('./index.html')); // 离线兜底
-    })
+    fetch(e.request)
+      .then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      })
+      .catch(() =>
+        // 断网：用缓存；连缓存都没有就兜底给首页
+        caches.match(e.request).then((hit) => hit || caches.match('./index.html'))
+      )
   );
 });

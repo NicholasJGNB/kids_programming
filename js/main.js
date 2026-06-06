@@ -90,4 +90,14 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       /* 离线功能不可用也无妨 */
     });
   });
+  // 已经由旧版 SW 控制时，若出现新版本接管就自动刷新一次，立刻用上最新代码。
+  // （首次访问还没有 controller，不会触发刷新，避免无谓的重载）
+  if (navigator.serviceWorker.controller) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      location.reload();
+    });
+  }
 }
