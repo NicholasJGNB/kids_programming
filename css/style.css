@@ -382,10 +382,6 @@ body.editing .lang-toggle {
   background: var(--primary);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
 }
-/* 招式调用行：青色，和方向命令区分 */
-.cmd-row.cmd-fn {
-  background: #2bb3a3;
-}
 .cmd-row .ico {
   font-size: 22px;
   width: 24px;
@@ -525,8 +521,8 @@ button.cmd .ico {
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  grid-template-columns: 1fr 1fr 1fr 1.3fr;
+  gap: 8px;
 }
 button.act {
   border: none;
@@ -546,9 +542,6 @@ button.act:active {
 .btn-loop {
   background: #b98bff;
 }
-.btn-fn {
-  background: #2bb3a3;
-}
 .btn-undo {
   background: #9aa6c4;
 }
@@ -559,8 +552,8 @@ button.act:active {
   background: var(--primary);
 }
 button.act {
-  font-size: 13px;
-  padding: 13px 0;
+  font-size: 15px;
+  padding: 14px 0;
 }
 button:disabled {
   opacity: 0.5;
@@ -747,72 +740,6 @@ body.editing .cell {
 .level-build:active {
   translate: 0 4px;
   box-shadow: 0 0 0 var(--green-dark);
-}
-
-/* 招式（自定义积木）弹窗 */
-.fn-card {
-  max-width: 360px;
-}
-.fn-card h2 {
-  margin: 2px 0 6px;
-  font-size: 20px;
-  color: #2bb3a3;
-}
-.fn-tip {
-  color: #7a89ad;
-  font-size: 13px;
-  margin: 0 0 10px;
-}
-.fn-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-height: 52px;
-  max-height: 160px;
-  overflow-y: auto;
-  background: #f0fbf9;
-  border-radius: 12px;
-  padding: 8px;
-  margin-bottom: 10px;
-}
-.fn-list .cmd-row {
-  background: #2bb3a3;
-}
-.fn-ph {
-  color: #8bbdb6;
-  font-size: 13px;
-  padding: 6px;
-  text-align: center;
-}
-.fn-controls {
-  margin-bottom: 10px;
-}
-.fn-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.btn-fn-use {
-  grid-column: 1 / -1;
-}
-.btn-fn-close {
-  grid-column: 1 / -1;
-}
-/* 提高优先级，盖过通用的 .card button 蓝色，让弹窗里各按钮保持本色 */
-.fn-card .controls button.cmd {
-  background: var(--green);
-}
-.fn-card .btn-undo {
-  background: #9aa6c4;
-}
-.fn-card .btn-clear {
-  background: var(--pink);
-}
-.fn-card .btn-fn-use {
-  background: #2bb3a3;
-}
-.fn-card .btn-fn-close {
-  background: #9aa6c4;
 }
 
 .toast {

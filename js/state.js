@@ -15,7 +15,6 @@ let starsLeft = new Set(); // 本关还没捡到的星星
 let customLevel = null; // 自己造的关卡数据
 let editing = false; // 是否在搭建模式
 let editBrush = 'wall'; // 当前画笔
-let myMove = []; // 自定义"招式"：一串方向，可在程序里一键调用（函数雏形）
 
 // 每关的最好星级 { 关序号: 1~3 }，存进浏览器，刷新不丢
 let levelStars = {};

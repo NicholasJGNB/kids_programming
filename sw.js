@@ -5,7 +5,7 @@
  *
  * 改了游戏文件后，把下面的 CACHE 版本号 +1（联网用户会自动拿到新版）。
  */
-const CACHE = 'robot-game-v6';
+const CACHE = 'robot-game-v7';
 
 const ASSETS = [
   './',
