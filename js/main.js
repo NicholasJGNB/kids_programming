@@ -21,6 +21,24 @@ document.getElementById('btnUndo').onclick = undo;
 document.getElementById('btnClear').onclick = clearProgram;
 document.getElementById('btnRun').onclick = run;
 
+// 招式（自定义积木）弹窗
+document.getElementById('btnFn').onclick = openFnEditor;
+document.getElementById('fnUp').onclick = () => fnAdd('up');
+document.getElementById('fnDown').onclick = () => fnAdd('down');
+document.getElementById('fnLeft').onclick = () => fnAdd('left');
+document.getElementById('fnRight').onclick = () => fnAdd('right');
+document.getElementById('fnUndo').onclick = fnUndo;
+document.getElementById('fnClear').onclick = fnClear;
+document.getElementById('fnUse').onclick = fnUse;
+document.getElementById('fnClose').onclick = closeFnEditor;
+document.getElementById('fnList').addEventListener('click', (e) => {
+  const del = e.target.closest('.del');
+  if (del) fnDelete(parseInt(del.dataset.fndel, 10));
+});
+document.getElementById('fnOverlay').onclick = (e) => {
+  if (e.target.id === 'fnOverlay') closeFnEditor();
+};
+
 // 命令序列里的交互（事件委托）：删除某个命令、调循环次数
 programEl.addEventListener('click', (e) => {
   const del = e.target.closest('.del');

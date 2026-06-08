@@ -58,14 +58,17 @@ function placeRobot(animate) {
 /* 当前打开着的循环（它的 body 在收集后续动作）；null 表示没开循环 */
 let openLoop = null;
 
-/* 一个命令做成一整行：箭头 + 文字 + 删除按钮（点 ✕ 删掉它） */
-function makeCmdRow(cmd, key) {
+/* 一项命令做成一整行：方向命令是箭头，招式调用是 🧩；都带删除按钮 */
+function makeCmdRow(item, key) {
   const row = document.createElement('div');
-  row.className = 'cmd-row cmd-' + cmd;
+  const isFn = typeof item === 'object' && item.fn;
+  row.className = 'cmd-row ' + (isFn ? 'cmd-fn' : 'cmd-' + item);
   row.dataset.key = key;
+  const ico = isFn ? '🧩' : ARROW[item];
+  const label = isFn ? t('fn.label') : t('btn.' + item);
   row.innerHTML =
-    `<span class="ico">${ARROW[cmd]}</span>` +
-    `<span class="cmd-label">${t('btn.' + cmd)}</span>` +
+    `<span class="ico">${ico}</span>` +
+    `<span class="cmd-label">${label}</span>` +
     `<button class="del" data-del="${key}" aria-label="delete">✕</button>`;
   return row;
 }
@@ -175,16 +178,88 @@ function changeLoop(i, delta) {
   tone(880, 0.05, 0, 'square', 0.1);
 }
 
-/* 加方向命令：圈开着就放进圈里，否则放到外面 */
-function addCommand(cmd) {
-  if (isRunning) return;
+/* 往程序里加一项（方向命令 或 招式调用 {fn:true}）：圈开着就放进圈里 */
+function insertItem(item) {
+  if (isRunning) return false;
   if (totalCount() >= 60) {
+    toast(t('toast.tooMany'));
+    return false;
+  }
+  if (openLoop) openLoop.body.push(item);
+  else program.push(item);
+  renderProgram();
+  return true;
+}
+
+/* 加方向命令 */
+function addCommand(cmd) {
+  insertItem(cmd);
+}
+
+/* ===== 招式（自定义积木 / 函数雏形）===== */
+// 在弹窗里把 myMove 这串动作画成竖列表
+function renderFnList() {
+  const box = document.getElementById('fnList');
+  box.innerHTML = '';
+  if (myMove.length === 0) {
+    const ph = document.createElement('div');
+    ph.className = 'fn-ph';
+    ph.textContent = t('fn.empty');
+    box.appendChild(ph);
+    return;
+  }
+  myMove.forEach((d, j) => {
+    const row = document.createElement('div');
+    row.className = 'cmd-row cmd-' + d;
+    row.innerHTML =
+      `<span class="ico">${ARROW[d]}</span>` +
+      `<span class="cmd-label">${t('btn.' + d)}</span>` +
+      `<button class="del" data-fndel="${j}" aria-label="delete">✕</button>`;
+    box.appendChild(row);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+function openFnEditor() {
+  if (isRunning) return;
+  renderFnList();
+  document.getElementById('fnOverlay').classList.add('show');
+}
+function closeFnEditor() {
+  document.getElementById('fnOverlay').classList.remove('show');
+  renderProgram(); // 改了招式定义，程序里用到招式的地方一起更新显示
+}
+function fnAdd(dir) {
+  if (myMove.length >= 12) {
     toast(t('toast.tooMany'));
     return;
   }
-  if (openLoop) openLoop.body.push(cmd);
-  else program.push(cmd);
-  renderProgram();
+  myMove.push(dir);
+  renderFnList();
+  tone(880, 0.06, 0, 'square', 0.12);
+}
+function fnUndo() {
+  myMove.pop();
+  renderFnList();
+}
+function fnClear() {
+  myMove = [];
+  renderFnList();
+}
+function fnDelete(j) {
+  myMove.splice(j, 1);
+  renderFnList();
+  tone(420, 0.05, 0, 'square', 0.1);
+}
+// 把"招式"作为一个调用塞进程序
+function fnUse() {
+  if (myMove.length === 0) {
+    toast(t('fn.empty'));
+    return;
+  }
+  if (insertItem({ fn: true })) {
+    closeFnEditor();
+    tone(740, 0.07, 0, 'square', 0.12);
+  }
 }
 
 /* 撤回：优先从打开的圈里撤，圈空了再撤外面 */
@@ -218,18 +293,27 @@ function setButtonsDisabled(disabled) {
   });
 }
 
-/* 把带循环的命令展开成一串实际要走的步骤。
-   循环"圈"会把它 body 里的动作整组重复 N 次。
+/* 把一项命令展开进步骤序列：招式调用展开成 myMove 里的一串动作（都共用招式行的 key 做高亮）。 */
+function pushItemSteps(item, key, steps) {
+  if (typeof item === 'object' && item.fn) {
+    myMove.forEach((d) => steps.push({ dir: d, key }));
+  } else {
+    steps.push({ dir: item, key });
+  }
+}
+
+/* 把带循环和招式的命令展开成一串实际要走的步骤。
+   循环"圈"把 body 整组重复 N 次；招式调用展开成它定义的动作。
    返回数组，每项 { dir, key }，key 指向要高亮的命令方块。 */
 function flattenProgram() {
   const steps = [];
   program.forEach((item, i) => {
     if (typeof item === 'object' && item.loop !== undefined) {
       for (let r = 0; r < item.loop; r++) {
-        item.body.forEach((c, j) => steps.push({ dir: c, key: i + '-' + j }));
+        item.body.forEach((c, j) => pushItemSteps(c, i + '-' + j, steps));
       }
     } else {
-      steps.push({ dir: item, key: '' + i });
+      pushItemSteps(item, '' + i, steps);
     }
   });
   return steps;
