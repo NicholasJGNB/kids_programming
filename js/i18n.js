@@ -203,6 +203,20 @@ function getLang() {
   return currentLang;
 }
 
+// 朗读一段文字（用浏览器自带的语音合成，给还不识字的孩子听；不支持也不报错）
+function speak(text) {
+  try {
+    if (!('speechSynthesis' in window) || !text) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = currentLang === 'zh' ? 'zh-CN' : 'en-US';
+    u.rate = currentLang === 'zh' ? 0.9 : 1;
+    window.speechSynthesis.speak(u);
+  } catch (e) {
+    /* 朗读不可用就算了 */
+  }
+}
+
 function setLang(lang) {
   if (lang !== 'zh' && lang !== 'en') return;
   currentLang = lang;

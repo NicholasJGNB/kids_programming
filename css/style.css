@@ -101,6 +101,20 @@ h1 {
   box-shadow: 0 0 0 var(--primary-dark);
 }
 
+/* 朗读提示小按钮 */
+.speak-btn {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.speak-btn:active {
+  background: #eef3ff;
+}
+
 /* 语言切换小按钮 */
 .lang-toggle {
   border: 2px solid var(--primary);

@@ -70,6 +70,11 @@ document.getElementById('langToggle').onclick = () => {
   setLang(getLang() === 'zh' ? 'en' : 'zh');
 };
 
+// 朗读当前关卡提示（给还不识字的孩子听）
+document.getElementById('speakBtn').onclick = () => {
+  speak(document.getElementById('goalHint').textContent);
+};
+
 // 语言切换后，重绘需要动态文案的部分（状态栏标签、关卡提示、命令条占位、循环按钮）
 function refreshDynamicI18n() {
   buildBoard(); // 重绘状态栏标签 + 关卡提示
