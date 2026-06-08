@@ -84,7 +84,7 @@ function buildBoard() {
   renderLevelSelect();
 }
 
-/* 选关：一排可点的关卡按钮，全部可选，当前关高亮，通关的带 ⭐ */
+/* 选关：一排可点的关卡按钮，当前关高亮，已通关的在数字下方显示获得的星级 */
 function renderLevelSelect() {
   const box = document.getElementById('levelSelect');
   box.innerHTML = '';
@@ -92,11 +92,74 @@ function renderLevelSelect() {
     const btn = document.createElement('button');
     btn.className = 'level-btn';
     if (i === levelIndex) btn.classList.add('current');
-    if (cleared.has(i)) btn.classList.add('done');
-    btn.textContent = i + 1;
+    const got = levelStars[i] || 0;
+    btn.innerHTML =
+      `<span class="lv-num">${i + 1}</span>` +
+      (got ? `<span class="lv-stars">${'⭐'.repeat(got)}</span>` : '');
     btn.onclick = () => goToLevel(i);
     box.appendChild(btn);
   }
+}
+
+/* 算这一关的"最短步数"（含按最优顺序捡完所有宝贝），用来给星级评分 */
+function bfsDist(lv, a, b) {
+  const wall = new Set((lv.walls || []).map((w) => w.x + ',' + w.y));
+  const free = (x, y) => x >= 0 && y >= 0 && x < lv.cols && y < lv.rows && !wall.has(x + ',' + y);
+  const seen = new Set([a[0] + ',' + a[1]]);
+  let q = [[a[0], a[1], 0]];
+  while (q.length) {
+    const [x, y, d] = q.shift();
+    if (x === b[0] && y === b[1]) return d;
+    for (const [dx, dy] of [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ]) {
+      const nx = x + dx,
+        ny = y + dy,
+        k = nx + ',' + ny;
+      if (free(nx, ny) && !seen.has(k)) {
+        seen.add(k);
+        q.push([nx, ny, d + 1]);
+      }
+    }
+  }
+  return Infinity;
+}
+function permute(a) {
+  if (a.length <= 1) return [a];
+  const out = [];
+  a.forEach((v, i) =>
+    permute(a.slice(0, i).concat(a.slice(i + 1))).forEach((p) => out.push([v, ...p]))
+  );
+  return out;
+}
+function optimalSteps() {
+  const lv = level();
+  const stars = (lv.stars || []).map((s) => [s.x, s.y]);
+  const S = [lv.start.x, lv.start.y],
+    G = [lv.goal.x, lv.goal.y];
+  if (!stars.length) return bfsDist(lv, S, G);
+  let best = Infinity;
+  for (const order of permute(stars)) {
+    let d = 0,
+      cur = S;
+    for (const s of order) {
+      d += bfsDist(lv, cur, s);
+      cur = s;
+    }
+    d += bfsDist(lv, cur, G);
+    best = Math.min(best, d);
+  }
+  return best;
+}
+
+/* 根据走的步数和最短步数算星级：走最短=3星，多一点=2星，绕远=1星 */
+function starsForRun(used, optimal) {
+  if (used <= optimal) return 3;
+  if (used <= optimal + 4) return 2;
+  return 1;
 }
 
 /* 跳到指定关卡 */

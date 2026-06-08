@@ -67,6 +67,8 @@ const I18N = {
     'run.replay': '再玩一次',
     'run.customWinTitle': '通关啦！🎉',
     'run.customWinText': '你自己造的关也能通关，真厉害！',
+    'result.steps': '用了 {n} 步',
+    'result.threeStar': '走的是最短路，满星！',
     // —— 编辑器提示 ——
     'edit.needStartGoal': '要有一个起点🤖和一个电池🔋哦',
     'edit.starTrapped': '有个宝贝被障碍围住了，机器人拿不到哦',
@@ -151,6 +153,8 @@ const I18N = {
     'run.replay': 'Play again',
     'run.customWinTitle': 'Cleared! 🎉',
     'run.customWinText': 'You beat your own level — awesome!',
+    'result.steps': 'Used {n} steps',
+    'result.threeStar': 'Shortest path — full stars!',
     'edit.needStartGoal': 'You need a start 🤖 and a battery 🔋',
     'edit.starTrapped': "A treasure is walled in — the robot can't reach it",
     'edit.noReach': "The robot can't reach the battery — move some walls ~",

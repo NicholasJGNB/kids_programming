@@ -262,6 +262,7 @@ async function run() {
   const lv = level();
   await sleep(300);
 
+  let movesUsed = 0; // 实际走了多少步，用来评星级
   for (let s = 0; s < steps.length; s++) {
     clearRunHighlight();
     const active = programEl.querySelector(`[data-key="${steps[s].key}"]`);
@@ -292,6 +293,7 @@ async function run() {
     }
     robot.x = nx;
     robot.y = ny;
+    movesUsed++;
     placeRobot(true);
     soundStep();
     await sleep(450);
@@ -322,7 +324,12 @@ async function run() {
         finishRun(true, t('run.customWinTitle'), t('run.customWinText'), '🎉', t('run.replay'));
         return;
       }
-      cleared.add(levelIndex); // 记下这一关已通关，显示 ⭐
+      // 评星级：走最短路 3 星，多绕一点 2 星，绕远 1 星；记住每关最好成绩
+      const stars = starsForRun(movesUsed, optimalSteps());
+      if (stars > (levelStars[levelIndex] || 0)) {
+        levelStars[levelIndex] = stars;
+        saveStars();
+      }
       const isLast = levelIndex === LEVELS.length - 1;
       if (isLast) soundCheer();
       else soundWin();
@@ -333,7 +340,9 @@ async function run() {
         isLast ? t('run.allClearText') : t('card.win.text'),
         isLast ? '🏆' : '🎉',
         isLast ? t('run.replay') : t('card.next'),
-        isLast
+        isLast,
+        stars,
+        movesUsed
       );
       return;
     }
@@ -352,13 +361,25 @@ function canMoveTo(x, y) {
   return true;
 }
 
-function finishRun(success, title, text, emoji, btnLabel, isFinalWin) {
+function finishRun(success, title, text, emoji, btnLabel, isFinalWin, stars, movesUsed) {
   isRunning = false;
   setButtonsDisabled(false);
   if (success) confetti(isFinalWin ? 160 : 90); // 过关撒花，通关撒更多
   document.getElementById('cardEmoji').textContent = emoji;
   document.getElementById('cardTitle').textContent = title;
   document.getElementById('cardText').textContent = text;
+  // 三星评分：通关时显示获得几颗星 + 走了几步
+  const starsEl = document.getElementById('cardStars');
+  if (stars) {
+    starsEl.innerHTML =
+      '⭐'.repeat(stars) + '<span class="empty">' + '☆'.repeat(3 - stars) + '</span>';
+    starsEl.classList.add('show');
+    document.getElementById('cardSteps').textContent =
+      movesUsed != null ? t('result.steps', { n: movesUsed }) : '';
+  } else {
+    starsEl.classList.remove('show');
+    document.getElementById('cardSteps').textContent = '';
+  }
   const btn = document.getElementById('cardBtn');
   btn.textContent = btnLabel;
   overlayEl.classList.add('show');

@@ -11,11 +11,25 @@ let levelIndex = 0; // -1 表示正在玩"自己造的关"
 let program = [];
 let robot = null; // {x, y, dir}
 let isRunning = false;
-let cleared = new Set(); // 已通关的关卡序号（用来显示 ⭐）
 let starsLeft = new Set(); // 本关还没捡到的星星
 let customLevel = null; // 自己造的关卡数据
 let editing = false; // 是否在搭建模式
 let editBrush = 'wall'; // 当前画笔
+
+// 每关的最好星级 { 关序号: 1~3 }，存进浏览器，刷新不丢
+let levelStars = {};
+try {
+  levelStars = JSON.parse(localStorage.getItem('stars') || '{}') || {};
+} catch (e) {
+  /* 读取失败就用空的 */
+}
+function saveStars() {
+  try {
+    localStorage.setItem('stars', JSON.stringify(levelStars));
+  } catch (e) {
+    /* 存不了也不影响游玩 */
+  }
+}
 
 const boardEl = document.getElementById('board');
 const programEl = document.getElementById('program');
