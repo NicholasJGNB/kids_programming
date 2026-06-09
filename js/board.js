@@ -9,9 +9,48 @@ function level() {
   return levelIndex === -1 ? customLevel : LEVELS[levelIndex];
 }
 
+/* 每组关卡一个主题：草地 / 沙漠 / 雪地 / 太空，让 18 关有"旅程感"
+   分组与关卡设计一致：1-4 草地、5-8 沙漠、9-12 雪地、13-18 太空 */
+function themeForLevel() {
+  if (levelIndex === -1) return 'grass'; // 自由关用草地
+  if (levelIndex < 4) return 'grass';
+  if (levelIndex < 8) return 'desert';
+  if (levelIndex < 12) return 'snow';
+  return 'space';
+}
+const THEME_FLOATIES = {
+  grass: ['☁️', '☁️', '🦋', '🌼'],
+  desert: ['☁️', '🌵', '☀️', '🪨'],
+  snow: ['❄️', '❄️', '☁️', '⛄'],
+  space: ['⭐', '✨', '🪐', '🌟'],
+};
+function applyTheme() {
+  const theme = themeForLevel();
+  if (document.body.dataset.theme === theme && document.getElementById('bg').childElementCount)
+    return;
+  document.body.dataset.theme = theme;
+  // 重新铺一层缓缓漂浮的氛围粒子
+  const bg = document.getElementById('bg');
+  bg.innerHTML = '';
+  const set = THEME_FLOATIES[theme] || THEME_FLOATIES.grass;
+  for (let i = 0; i < 9; i++) {
+    const f = document.createElement('span');
+    f.className = 'floatie';
+    f.textContent = set[i % set.length];
+    f.style.left = Math.round(Math.random() * 92) + 'vw';
+    f.style.top = Math.round(Math.random() * 88) + 'vh';
+    f.style.fontSize = 16 + Math.round(Math.random() * 22) + 'px';
+    f.style.animationDuration = 7 + Math.round(Math.random() * 8) + 's';
+    f.style.animationDelay = '-' + Math.round(Math.random() * 8) + 's';
+    f.style.opacity = (0.25 + Math.random() * 0.4).toFixed(2);
+    bg.appendChild(f);
+  }
+}
+
 /* 渲染地图与机器人初始位置 */
 function buildBoard() {
   const lv = level();
+  applyTheme();
   boardEl.style.gridTemplateColumns = `repeat(${lv.cols}, 1fr)`;
   boardEl.style.gridTemplateRows = `repeat(${lv.rows}, 1fr)`;
   boardEl.innerHTML = '';
@@ -28,12 +67,12 @@ function buildBoard() {
       }
       if (lv.goal && lv.goal.x === x && lv.goal.y === y) {
         cell.classList.add('goal');
-        cell.textContent = '🔋';
+        cell.innerHTML = '<span class="ic">🔋</span>';
       }
       if ((lv.stars || []).some((s) => s.x === x && s.y === y)) {
         cell.classList.add('star');
         cell.dataset.star = '1';
-        cell.textContent = pickEmoji(REWARD_EMOJIS, x, y, 4);
+        cell.innerHTML = '<span class="ic">' + pickEmoji(REWARD_EMOJIS, x, y, 4) + '</span>';
       }
       // 编辑模式下，起点格显示一个淡淡的🤖标记
       if (
