@@ -402,6 +402,28 @@ body.editing .lang-toggle {
     transform: scale(1.12);
   }
 }
+/* 撞墙时整个游戏区轻微震一下 */
+.shake-screen {
+  animation: screenshake 0.34s ease;
+}
+@keyframes screenshake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
 /* 被撞的石头晃一晃 */
 .cell.shake {
   animation: shake 0.4s;
@@ -691,7 +713,17 @@ button:disabled {
   max-width: 320px;
   width: 86%;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-  animation: pop 0.3s;
+  animation: cardin 0.42s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes cardin {
+  0% {
+    transform: scale(0.5) translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 .card .emoji {
   font-size: 56px;
@@ -706,19 +738,39 @@ button:disabled {
   font-size: 15px;
   margin: 6px 0 18px;
 }
-/* 过关三星 */
+/* 过关三星：三颗逐颗弹出 */
 .card-stars {
   display: none;
-  font-size: 34px;
-  letter-spacing: 4px;
+  font-size: 38px;
   margin: 4px 0 2px;
 }
 .card-stars.show {
   display: block;
-  animation: pop 0.4s;
 }
-.card-stars .empty {
-  opacity: 0.35;
+.card-stars .cstar {
+  display: inline-block;
+  margin: 0 3px;
+}
+/* 获得的星先缩成 0，靠 .pop 逐颗弹出；未获得的星淡淡显示 */
+.card-stars .cstar:not(.empty) {
+  transform: scale(0);
+}
+.card-stars .cstar.empty {
+  opacity: 0.32;
+}
+.card-stars .cstar.pop {
+  animation: starpop 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
+}
+@keyframes starpop {
+  0% {
+    transform: scale(0) rotate(-30deg);
+  }
+  70% {
+    transform: scale(1.35) rotate(8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
 }
 .card-steps {
   color: #9aa6c4;

@@ -59,6 +59,7 @@ const SHARED_GLOBALS = [
   'selectBrush',
   'setButtonsDisabled',
   'setLang',
+  'shakeScreen',
   'showBurst',
   'sleep',
   'speak',

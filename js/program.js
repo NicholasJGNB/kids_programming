@@ -400,12 +400,26 @@ function finishRun(success, title, text, emoji, btnLabel, isFinalWin, stars, mov
   document.getElementById('cardEmoji').textContent = emoji;
   document.getElementById('cardTitle').textContent = title;
   document.getElementById('cardText').textContent = text;
-  // 三星评分：通关时显示获得几颗星 + 走了几步
+  // 三星评分：通关时三颗星逐颗"铛铛铛"弹出 + 走了几步
   const starsEl = document.getElementById('cardStars');
+  starsEl.innerHTML = '';
   if (stars) {
-    starsEl.innerHTML =
-      '⭐'.repeat(stars) + '<span class="empty">' + '☆'.repeat(3 - stars) + '</span>';
+    for (let i = 0; i < 3; i++) {
+      const sp = document.createElement('span');
+      sp.className = 'cstar' + (i < stars ? '' : ' empty');
+      sp.textContent = i < stars ? '⭐' : '☆';
+      starsEl.appendChild(sp);
+    }
     starsEl.classList.add('show');
+    starsEl.querySelectorAll('.cstar:not(.empty)').forEach((el, i) => {
+      setTimeout(
+        () => {
+          el.classList.add('pop');
+          tone(620 + i * 220, 0.2, 0, 'triangle', 0.26); // 音高一颗比一颗高
+        },
+        360 + i * 300
+      );
+    });
     document.getElementById('cardSteps').textContent =
       movesUsed != null ? t('result.steps', { n: movesUsed }) : '';
   } else {
@@ -436,6 +450,16 @@ function finishRun(success, title, text, emoji, btnLabel, isFinalWin, stars, mov
   };
 }
 
+/* 撞墙时屏幕轻微震一下，增强"撞到了"的反馈 */
+function shakeScreen() {
+  const w = document.querySelector('.game-wrap');
+  if (!w) return;
+  w.classList.remove('shake-screen');
+  void w.offsetWidth;
+  w.classList.add('shake-screen');
+  setTimeout(() => w.classList.remove('shake-screen'), 360);
+}
+
 /* 撞击效果：机器人朝障碍方向冲一截再弹回，障碍格晃动并冒 💥 */
 async function crash(dir, tx, ty) {
   const r = document.getElementById('robot');
@@ -447,8 +471,9 @@ async function crash(dir, tx, ty) {
   r.style.translate = `${lungeX}px ${lungeY}px`;
   await sleep(120);
 
-  // 撞上的瞬间：💥 + 石头晃动 + 机器人受惊变大一下
+  // 撞上的瞬间：💥 + 石头晃动 + 机器人受惊变大一下 + 屏幕轻震
   showBurst(tx, ty, dir);
+  shakeScreen();
   const rock = boardEl.querySelector(`.cell.wall[data-x="${tx}"][data-y="${ty}"]`);
   if (rock) {
     rock.classList.add('shake');
