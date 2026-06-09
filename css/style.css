@@ -233,6 +233,44 @@ body.editing .lang-toggle {
 .cell.star {
   background: #fff9e6;
 }
+/* 机器人走过的脚印轨迹：淡淡的蓝点 */
+.cell.trail::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: rgba(91, 141, 239, 0.28);
+  transform: translate(-50%, -50%);
+  animation: trailpop 0.3s ease-out;
+}
+@keyframes trailpop {
+  from {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+/* 电池充电时金色发光脉冲 */
+.cell.goal.charging {
+  animation: goalglow 0.5s ease-in-out infinite;
+}
+@keyframes goalglow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 200, 60, 0.5);
+    background: #fff4d6;
+  }
+  50% {
+    box-shadow: 0 0 14px 4px rgba(255, 200, 60, 0.85);
+    background: #ffe9a8;
+  }
+}
 .star-burst {
   position: absolute;
   z-index: 7;
@@ -254,42 +292,92 @@ body.editing .lang-toggle {
   position: absolute;
   width: 100%;
   height: 100%;
+  z-index: 5;
+  transition:
+    left 0.35s ease,
+    top 0.35s ease;
+  will-change: left, top;
+}
+/* 内层 face：负责呼吸 / 弹跳 / 庆祝等所有变形动画 */
+.robot .face {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 34px;
-  transition:
-    left 0.35s ease,
-    top 0.35s ease,
-    transform 0.35s ease;
-  z-index: 5;
-  will-change: left, top, transform;
+  transform-origin: 50% 90%;
+  animation: breathe 2.6s ease-in-out infinite;
 }
-.robot.bump {
+/* 待机：轻轻呼吸/浮动 */
+@keyframes breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  50% {
+    transform: translateY(-6%) scale(1.02, 0.98);
+  }
+}
+/* 走一步：朝移动方向倾斜 + 弹跳挤压 */
+.robot .face.hop {
+  animation: hop 0.42s ease;
+}
+@keyframes hop {
+  0% {
+    transform: translateY(0) scale(1, 1) rotate(0);
+  }
+  35% {
+    transform: translateY(-22%) scale(0.86, 1.14) rotate(var(--lean, 0deg));
+  }
+  70% {
+    transform: translateY(0) scale(1.14, 0.86) rotate(0);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1) rotate(0);
+  }
+}
+/* 撞墙：受惊一缩 */
+.robot.bump .face {
   animation: bump 0.4s;
 }
 @keyframes bump {
   0%,
   100% {
-    scale: 1;
+    transform: scale(1);
   }
   30% {
-    scale: 1.25;
+    transform: scale(1.25);
   }
   60% {
-    scale: 0.9;
+    transform: scale(0.9);
   }
 }
-.robot.cheer {
+/* 庆祝：欢快蹦跳 */
+.robot.cheer .face {
   animation: cheer 0.6s infinite;
 }
 @keyframes cheer {
   0%,
   100% {
-    translate: 0 0;
+    transform: translateY(0);
   }
   50% {
-    translate: 0 -8px;
+    transform: translateY(-22%) scale(1.05);
+  }
+}
+/* 充电中：绿光脉冲 */
+.robot.charging .face {
+  animation: charging 0.32s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px #4cc38a);
+}
+@keyframes charging {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
   }
 }
 /* 被撞的石头晃一晃 */

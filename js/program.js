@@ -55,6 +55,35 @@ function placeRobot(animate) {
   }
 }
 
+/* 走一步时让机器人朝移动方向倾斜+弹跳（挤压拉伸，动画的灵魂） */
+const LEAN = { up: '0deg', down: '0deg', left: '-13deg', right: '13deg' };
+function hopRobot(dir) {
+  const face = document.querySelector('#robot .face');
+  if (!face) return;
+  face.style.setProperty('--lean', LEAN[dir] || '0deg');
+  face.classList.remove('hop');
+  void face.offsetWidth; // 重启动画
+  face.classList.add('hop');
+}
+
+/* 机器人走过的格子留下淡淡的脚印轨迹，一眼看出走过的路 */
+function dropTrail(x, y) {
+  const cell = boardEl.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+  if (cell && !cell.classList.contains('wall') && !cell.classList.contains('goal')) {
+    cell.classList.add('trail');
+  }
+}
+
+/* 到达电池：充电动画——电池发光、机器人闪绿光"充电中" */
+async function chargeUp() {
+  const cell = boardEl.querySelector('.cell.goal');
+  const r = document.getElementById('robot');
+  if (cell) cell.classList.add('charging');
+  if (r) r.classList.add('charging');
+  await sleep(650);
+  if (r) r.classList.remove('charging');
+}
+
 /* 当前打开着的循环（它的 body 在收集后续动作）；null 表示没开循环 */
 let openLoop = null;
 
@@ -291,9 +320,11 @@ async function run() {
       );
       return;
     }
+    dropTrail(robot.x, robot.y); // 离开的格子留下脚印
     robot.x = nx;
     robot.y = ny;
     movesUsed++;
+    hopRobot(cmd); // 朝移动方向倾斜弹跳
     placeRobot(true);
     soundStep();
     await sleep(450);
@@ -316,6 +347,7 @@ async function run() {
         return;
       }
       clearRunHighlight();
+      await chargeUp(); // 先来一段充电动画再庆祝
       cheer();
       if (levelIndex === -1) {
         // 自己造的关：通关

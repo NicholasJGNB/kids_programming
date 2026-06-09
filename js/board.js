@@ -59,7 +59,8 @@ function buildBoard() {
     const r = document.createElement('div');
     r.className = 'robot';
     r.id = 'robot';
-    r.textContent = '🤖';
+    // 外层负责定位，内层 face 负责呼吸/眨眼/弹跳等动画，互不打架
+    r.innerHTML = '<span class="face">🤖</span>';
     boardEl.appendChild(r);
     placeRobot(false);
   } else {
