@@ -214,6 +214,10 @@ function addCommand(cmd) {
   if (openLoop) openLoop.body.push(cmd);
   else program.push(cmd);
   renderProgram();
+  // 只让"刚加的那一行"轻轻弹一下，不打扰整列表
+  const rows = programEl.querySelectorAll('.cmd-row');
+  const last = rows[rows.length - 1];
+  if (last) last.classList.add('justadded');
 }
 
 /* 撤回：优先从打开的圈里撤，圈空了再撤外面 */

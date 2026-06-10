@@ -214,6 +214,20 @@ body.editing .lang-toggle {
   width: 100%;
   position: relative; /* 机器人以地图为定位参照 */
 }
+/* 关卡切换时地图淡入放大 */
+#board.board-in {
+  animation: boardin 0.4s ease;
+}
+@keyframes boardin {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 .cell {
   background: var(--cell);
   border-radius: 10px;
@@ -499,6 +513,23 @@ body.editing .lang-toggle {
   }
   to {
     scale: 1;
+  }
+}
+/* 刚加的命令行轻轻弹一下（只作用于新行） */
+.cmd-row.justadded {
+  animation: rowpop 0.26s ease;
+}
+@keyframes rowpop {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 /* 单条命令：一整行（箭头 + 文字 + 删除按钮） */

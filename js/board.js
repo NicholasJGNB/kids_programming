@@ -122,6 +122,13 @@ function buildBoard() {
   }
   document.getElementById('goalHint').textContent = hintText;
   renderLevelSelect();
+
+  // 地图淡入（关卡切换更顺滑）；运行中重建棋盘时不重复播放，免得每次出发都缩放
+  if (!isRunning) {
+    boardEl.classList.remove('board-in');
+    void boardEl.offsetWidth;
+    boardEl.classList.add('board-in');
+  }
 }
 
 /* 选关：一排可点的关卡按钮，当前关高亮，已通关的在数字下方显示获得的星级 */
