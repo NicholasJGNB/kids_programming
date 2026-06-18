@@ -1011,63 +1011,81 @@ body[data-theme='space'] .cell {
 
 /* ===== 横屏：左右两栏，地图按高度放大，右侧放命令与按钮 ===== */
 @media (orientation: landscape) {
+  /* 横屏：整页刚好撑满一屏、不滚动（用弹性填充，不再用固定数值算高度，
+     这样 iPad/手机/桌面快捷应用都不会比屏幕高、不会上下滑） */
+  html {
+    height: 100%;
+  }
   body {
     justify-content: flex-start;
+    height: 100vh;
+    height: 100dvh; /* 优先用动态视口高度，iOS 更准 */
+    min-height: 0;
+    overflow: hidden;
+    /* 留出 iPad/iPhone 安全区（刘海、底部小横条），内容不被遮住 */
+    padding: calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right))
+      calc(8px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+  }
+  h1 {
+    font-size: 20px;
+    margin: 2px 0 4px;
+    flex: 0 0 auto;
   }
   .game-wrap {
     max-width: 100%;
+    flex: 1 1 auto; /* 占满标题之外的全部高度 */
+    min-height: 0;
+    gap: 8px;
   }
-  /* 让 .main 变成真正的两栏盒子 */
+  /* 让 .main 变成真正的两栏盒子，并填满状态栏之外的剩余高度 */
   .main {
     display: flex;
     gap: 14px;
     align-items: center;
     justify-content: center;
+    flex: 1 1 auto;
+    min-height: 0;
   }
   .panel {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     flex: 1 1 auto;
     min-width: 0;
     max-width: 460px;
-    height: calc(100vh - 96px);
+    height: 100%;
     justify-content: flex-start;
   }
   /* 命令序列填满右栏剩余高度，命令多了在框内竖向滚动 */
   .program {
     flex: 1 1 auto;
     max-height: none;
-    min-height: 80px;
+    min-height: 60px;
   }
-  /* 地图占左侧，按可用高度决定大小（正方形），留出标题和状态栏的空间 */
+  /* 地图占左侧，高度填满 .main、宽度按正方形自适应，绝不超出屏幕 */
   #board {
     flex: 0 0 auto;
+    height: 100%;
+    max-height: 100%;
     width: auto;
-    height: calc(100vh - 96px);
-    max-height: calc(100vh - 96px);
+    max-width: 60vw;
     aspect-ratio: 1 / 1;
   }
 }
 /* 矮屏（手机横屏）：标题更小、按钮更紧凑，进一步省高度 */
 @media (orientation: landscape) and (max-height: 560px) {
-  body {
-    padding: 8px;
-  }
   h1 {
-    font-size: 18px;
-    margin: 2px 0;
+    font-size: 17px;
+    margin: 1px 0 2px;
   }
   .main {
     gap: 12px;
   }
   #board {
-    height: calc(100vh - 70px);
-    max-height: calc(100vh - 70px);
     padding: 8px;
   }
   .program {
-    min-height: 48px;
+    min-height: 44px;
   }
   button.cmd {
     padding: 10px 0;
